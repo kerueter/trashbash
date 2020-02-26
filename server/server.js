@@ -30,10 +30,10 @@ app.get('/trash', cors(), (req, res) => {
   let queryMessage = 'SELECT * FROM trash ORDER BY id ASC';
   client.query(queryMessage, (err, dbRes) => {
     if(err) {
-      res.send("Error");
+      res.status(500).send("Error");
       return;
     }
-    res.send(dbRes.rows);
+    res.status(200).send(dbRes.rows);
   });
 });
 app.post('/trash', cors(), (req, res) => {
@@ -43,12 +43,12 @@ app.post('/trash', cors(), (req, res) => {
   client.query(queryText, queryVals, (err, dbRes) => {
     if(err) {
       console.log(err);
-      res.sendStatus(500);
+      res.status(500).send("Error");
       return;
     }
     regWs.clients.forEach(client => {
       client.send(JSON.stringify(dbRes.rows[0]));
     });
-    res.sendStatus(200);
+    res.status(200).send(dbRes.rows[0]);
   });
 });
