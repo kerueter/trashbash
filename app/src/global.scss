@@ -25,6 +25,10 @@
 @import "~@ionic/angular/css/text-transformation.css";
 @import "~@ionic/angular/css/flex-utils.css";
 
+ion-tab-bar {
+  display: none;
+}
+
 .trash-modal {
   .modal-wrapper {
     --max-height: 90vh;
