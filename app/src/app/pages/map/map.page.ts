@@ -1,5 +1,5 @@
 import { Component, ViewChild, OnInit, ElementRef, Renderer2 } from '@angular/core';
-import { GestureController, ModalController } from '@ionic/angular';
+import { GestureController, ModalController, LoadingController } from '@ionic/angular';
 
 import { Map, tileLayer, Marker } from 'leaflet';
 import * as L from 'leaflet';
@@ -32,13 +32,19 @@ export class MapPage implements OnInit {
     private gestureCtrl: GestureController,
     private renderer: Renderer2,
     private modalCtrl: ModalController,
+    private loadingCtrl: LoadingController,
     private apiService: ApiService
   ) {
     this.markers = new Array<Marker>();
     this.selectedPoi = null;
   }
 
-  ngOnInit() {
+  async ngOnInit() {
+    const loading = await this.loadingCtrl.create({
+      message: 'App wird initialisiert...'
+    });
+    await loading.present();
+
     this.initializeMap();
 
     // add gesture for slider menu
@@ -53,6 +59,7 @@ export class MapPage implements OnInit {
     gesture.enable();
 
     this.listTrash();
+    await loading.dismiss();
   }
 
   /**
@@ -86,7 +93,7 @@ export class MapPage implements OnInit {
    */
   formatDateTime(timestamp: string) {
     const datetime = new Date(timestamp);
-    return `${datetime.getUTCDate()}.${datetime.getUTCMonth() + 1}.${datetime.getUTCFullYear()} UM ${datetime.getUTCHours()}:${datetime.getMinutes()}`;
+    return `${this.pad(datetime.getUTCDate(), 2)}.${this.pad(datetime.getUTCMonth() + 1, 2)}.${datetime.getUTCFullYear()} UM ${this.pad(datetime.getUTCHours(), 2)}:${this.pad(datetime.getMinutes(), 2)}`;
   }
 
   /**
@@ -168,5 +175,11 @@ export class MapPage implements OnInit {
       }).addTo(this.map);
       this.locator.start();
     }, 1000);
+  }
+
+  private pad(num, size) {
+    let s = String(num);
+    while (s.length < (size || 2)) { s = '0' + s; }
+    return s;
   }
 }

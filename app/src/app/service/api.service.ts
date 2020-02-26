@@ -14,9 +14,7 @@ export class ApiService {
 
   public async listTrash(): Promise<Array<Trash>> {
     try {
-      const data = await this.httpClient.get<Array<Trash>>(
-        this.endpointUrl
-      ).toPromise();
+      const data = await this.httpClient.get<Array<Trash>>(this.endpointUrl).toPromise();
 
       return data;
     } catch (e) {
@@ -26,10 +24,9 @@ export class ApiService {
 
   public async postTrash(report: any): Promise<any> {
     try {
-      const data = await this.httpClient.post(this.endpointUrl,
-        report,
-        { headers: { 'Content-Type': 'application/json' } }
-      ).toPromise();
+      const data = await this.httpClient.post(this.endpointUrl, report, {
+        headers: { 'Content-Type': 'application/json' }
+      }).toPromise();
 
       return data;
     } catch (e) {

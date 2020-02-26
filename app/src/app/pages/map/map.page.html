@@ -21,7 +21,7 @@
       </svg>
       <ion-card-header *ngIf="selectedPoi">
         <ion-card-subtitle>GEMELDET VON {{ selectedPoi.username || ''}}<br>AM {{ selectedPoi.time ? formatDateTime(selectedPoi.time) : ''}}</ion-card-subtitle>
-        <ion-card-title>Trash point of Interest</ion-card-title>
+        <ion-card-title>Trash Report #{{ selectedPoi.id }}</ion-card-title>
       </ion-card-header>
     
       <ion-card-content *ngIf="selectedPoi">

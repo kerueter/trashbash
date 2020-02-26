@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ModalController } from '@ionic/angular';
+import { ModalController, LoadingController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -18,6 +18,7 @@ export class TrashAddPage implements OnInit {
 
   constructor(
     private modalCtrl: ModalController,
+    private loadingCtrl: LoadingController,
     private geolocation: Geolocation,
     private camera: Camera,
     public domSanitizer: DomSanitizer,
@@ -65,6 +66,10 @@ export class TrashAddPage implements OnInit {
   }
 
   async sendReport() {
+    const loading = await this.loadingCtrl.create({
+      message: 'Report wird übermittelt...'
+    });
+    await loading.present();
     const location = await this.getLocation();
 
     try {
@@ -82,8 +87,10 @@ export class TrashAddPage implements OnInit {
       console.log(resp);
     } catch (e) {
       console.error(e);
+    } finally {
+      await loading.dismiss();
+      this.closeModal();
     }
-    this.closeModal();
   }
 
   private async getLocation(): Promise<{lat: number, lng: number}> {

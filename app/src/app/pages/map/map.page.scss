@@ -52,5 +52,6 @@ ion-content ion-toolbar {
     height: 40px;
     bottom: 40px;
     left: calc(50% - 40px);
+    z-index: 999;
   }
 }
