@@ -22,7 +22,13 @@ ion-content ion-toolbar {
 
     &-active {
       bottom: 0;
-    } 
+    }
+
+    &-img {
+      width: 90%;
+      margin-left: 5%;
+      margin-top: 5px;
+    }
 
     &-slider {
       margin-left: calc(50% - 20px);

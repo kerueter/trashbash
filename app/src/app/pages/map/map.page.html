@@ -12,7 +12,7 @@
       <svg width="40" height="5" class="map-menu-slider">
         <rect width="400" height="100" style="fill:rgb(128,128,128);" />
       </svg>
-      <img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80" *ngIf="selectedPoi && selectedPoi.photo"/>
+      <img class="map-menu-img" src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80" *ngIf="selectedPoi && selectedPoi.photo"/>
       <ion-card-header *ngIf="selectedPoi">
         <ion-card-subtitle>GEMELDET VON {{ selectedPoi.username || ''}}<br>AM {{ selectedPoi.time ? formatDateTime(selectedPoi.time) : ''}}</ion-card-subtitle>
         <ion-card-title>Trash point of Interest</ion-card-title>
