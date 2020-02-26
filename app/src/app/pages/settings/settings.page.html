@@ -1,0 +1,19 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>
+      Einstellungen
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Einstellungen</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div *ngFor="let entry of data">
+    <p>Average: {{ entry.average }}</p>
+  </div>
+</ion-content>

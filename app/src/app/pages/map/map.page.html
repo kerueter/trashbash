@@ -1,0 +1,27 @@
+<ion-content [fullscreen]="true">
+  <div class="map" id="map-leaflet" leaflet></div>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" style="z-index: 1001; margin-bottom: 100px;">
+    <ion-fab-button size="small" (click)="openTrashAddModal()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <div>
+    <ion-card class="map-menu" #mapMenu>
+      <svg width="40" height="5" class="map-menu-slider">
+        <rect width="400" height="100" style="fill:rgb(128,128,128);" />
+      </svg>
+      <ion-card-header *ngIf="selectedPoi">
+        <ion-card-subtitle>TPOI</ion-card-subtitle>
+        <ion-card-title>Trash point of Interest</ion-card-title>
+      </ion-card-header>
+    
+      <ion-card-content *ngIf="selectedPoi">
+        <p>Username: {{ selectedPoi.username || ''}}</p>
+        <p>Latitude: {{ selectedPoi.latitude || ''}}</p>
+        <p>Longitude: {{ selectedPoi.longitude || ''}}</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
