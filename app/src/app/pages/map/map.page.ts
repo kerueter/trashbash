@@ -5,7 +5,7 @@ import { Map, tileLayer, Marker } from 'leaflet';
 import * as L from 'leaflet';
 import 'leaflet.locatecontrol';
 
-import { TrashAddPage } from '../trash/add/add.page';
+import { TrashAddPage } from '../modals/trash/add/add.page';
 import { FilterPage } from '../modals/filter/filter.page';
 import { ApiService } from 'src/app/service/api.service';
 import { Trash } from 'src/app/models/Trash';
@@ -102,13 +102,20 @@ export class MapPage implements OnInit {
    */
   private async listTrash() {
     const trashReports = await this.apiService.listTrash();
-    trashReports.forEach(report => {
-      const marker = new Marker([report.latitude, report.longitude]);
-      marker.addTo(this.map).on('click', e => {
-        this.selectedPoi = report;
-        this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
-        this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
-      });
+    trashReports.forEach(report => this.addMarker(report));
+  }
+
+  /**
+   * Add marker to leaflet map based on trash report
+   *
+   * @param report Trash report object
+   */
+  private addMarker(report: Trash) {
+    const marker = new Marker([report.latitude, report.longitude]);
+    marker.addTo(this.map).on('click', e => {
+      this.selectedPoi = report;
+      this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
+      this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
     });
   }
 
@@ -177,6 +184,12 @@ export class MapPage implements OnInit {
     }, 1000);
   }
 
+  /**
+   * Helper function for zero-padding a number to a padded string
+   *
+   * @param num Number to pad
+   * @param size Size of string (incl. zero-padding)
+   */
   private pad(num, size) {
     let s = String(num);
     while (s.length < (size || 2)) { s = '0' + s; }

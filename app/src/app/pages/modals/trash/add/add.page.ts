@@ -70,9 +70,9 @@ export class TrashAddPage implements OnInit {
       message: 'Report wird übermittelt...'
     });
     await loading.present();
-    const location = await this.getLocation();
 
     try {
+      const location = await this.getLocation();
       const resp = await this.apiService.postTrash({
         time: new Date().getTime() / 1000,
         username: this.username,

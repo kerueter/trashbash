@@ -14,7 +14,7 @@ import { HTTP } from '@ionic-native/http/ngx';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { TrashAddPage } from './pages/trash/add/add.page';
+import { TrashAddPage } from './pages/modals/trash/add/add.page';
 import { FormsModule } from '@angular/forms';
 import { FilterPage } from './pages/modals/filter/filter.page';
 
