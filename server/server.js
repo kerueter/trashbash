@@ -14,7 +14,7 @@ const client = new Client({
 client.connect();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({limit: '5mb'}));
 
 app.listen(1338, function () {
   console.log('Example app listening on port 1338!');
