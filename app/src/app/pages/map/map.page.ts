@@ -18,7 +18,7 @@ export class MapPage implements OnInit {
 
   @ViewChild('mapMenu', {static: true, read: ElementRef })
   mapMenu: ElementRef;
-  mapMenuY: number; // store start Y coordinate while sliding menu
+  mapMenuOffsetY: number; // store start Y coordinate while sliding menu
 
   map: Map;
   locator: any;
@@ -87,25 +87,24 @@ export class MapPage implements OnInit {
       const marker = new Marker([report.latitude, report.longitude]);
       marker.addTo(this.map).on('click', e => {
         this.selectedPoi = report;
-        this.renderer.setStyle(this.mapMenu.nativeElement, 'height', '300px');
+        this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
+        this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
       });
     });
   }
 
   private onSlideMenuStart($event) {
-    this.mapMenuY = this.mapMenu.nativeElement.offsetHeight;
+    this.mapMenuOffsetY = Number(this.mapMenu.nativeElement.style.bottom.substring(0, this.mapMenu.nativeElement.style.bottom.length - 2));
   }
 
   private onSlideMenuEnd($event) {
-    if (this.mapMenu.nativeElement.offsetHeight <= 100) {
-      this.renderer.setStyle(this.mapMenu.nativeElement, 'height', '101px');
-    }
-    this.mapMenuY = this.mapMenu.nativeElement.offsetHeight;
+    this.mapMenuOffsetY = Number(this.mapMenu.nativeElement.style.bottom.substring(0, this.mapMenu.nativeElement.style.bottom.length - 2));
   }
 
   private onSlideMenuMove($event) {
-    if (this.mapMenu.nativeElement.offsetHeight > 50) {
-      this.renderer.setStyle(this.mapMenu.nativeElement, 'height', (this.mapMenuY - $event.deltaY) + 'px');
+    const newOffsetY = this.mapMenuOffsetY - $event.deltaY;
+    if (newOffsetY <= 0) {
+      this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', newOffsetY + 'px');
     }
   }
 }
