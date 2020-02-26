@@ -29,19 +29,19 @@
         <p>Longitude: {{ selectedPoi.longitude || ''}}</p>
         <br>
         <ion-chip color="primary" *ngIf="selectedPoi.hausmuell">
-          <ion-icon name="pin"></ion-icon>
+          <ion-icon name="trash"></ion-icon>
           <ion-label>Hausmüll</ion-label>
         </ion-chip>
         <ion-chip color="success" *ngIf="selectedPoi.gruenabfall">
-          <ion-icon name="pin"></ion-icon>
+          <ion-icon name="trash"></ion-icon>
           <ion-label>Grünabfall</ion-label>
         </ion-chip>
         <ion-chip color="warning" *ngIf="selectedPoi.sperrmuell">
-          <ion-icon name="pin"></ion-icon>
+          <ion-icon name="trash"></ion-icon>
           <ion-label>Sperrmüll</ion-label>
         </ion-chip>
         <ion-chip color="danger" *ngIf="selectedPoi.sondermuell">
-          <ion-icon name="pin"></ion-icon>
+          <ion-icon name="trash"></ion-icon>
           <ion-label>Sondermüll</ion-label>
         </ion-chip>
         <img class="map-menu-img" [src]="selectedPoi.photo" *ngIf="selectedPoi && selectedPoi.photo"/>
