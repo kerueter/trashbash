@@ -49,7 +49,7 @@ export class TrashAddPage implements OnInit {
   async takePhoto() {
     const options: CameraOptions = {
       quality: 100,
-      destinationType: this.camera.DestinationType.FILE_URI,
+      destinationType: this.camera.DestinationType.DATA_URL,
       encodingType: this.camera.EncodingType.JPEG,
       mediaType: this.camera.MediaType.PICTURE
     };
@@ -60,7 +60,8 @@ export class TrashAddPage implements OnInit {
       console.error(e);
     }
     if (imageData) {
-      this.thumbnail.url = this.webview.convertFileSrc(imageData);
+      // this.thumbnail.url = this.webview.convertFileSrc(imageData);
+      this.thumbnail.url = 'data:image/jpeg;base64,' + imageData;
       this.thumbnail.captured = true;
     }
   }
@@ -76,7 +77,7 @@ export class TrashAddPage implements OnInit {
       gruenAbfall: this.trashes[1].isChecked,
       sperrMuell: this.trashes[2].isChecked,
       sonderMuell: this.trashes[3].isChecked,
-      photo: ''
+      photo: this.thumbnail.url
     }, { headers: { 'Content-Type': 'application/json' } })
     .subscribe(data => {
       console.log(data);
