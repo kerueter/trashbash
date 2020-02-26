@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="de.krueter.sbdproject" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>TRSHY</name>
-    <description>An awesome Ionic/Cordova app.</description>
-    <author email="krueter@uos.de" href="http://ionicframework.com/">Ionic Framework Team</author>
-    <content src="index.html" />
+<widget id="de.sbd.trashbash" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Trash Bash</name>
+    <description>The official Trash Bash app</description>
+    <author email="krueter@uos.de" href="http://ionicframework.com/">Kevin Rüter</author>
+    <content original-src="index.html" src="http://10.0.1.217:8100" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
@@ -116,4 +116,5 @@
     <plugin name="cordova-plugin-geolocation" spec="~4.0.2">
         <variable name="GEOLOCATION_USAGE_DESCRIPTION" value="To locate you" />
     </plugin>
+    <allow-navigation href="http://10.0.1.217:8100" sessionid="a3ed1719" />
 </widget>
