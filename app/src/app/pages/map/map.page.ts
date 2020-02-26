@@ -39,7 +39,107 @@ export class MapPage implements OnInit {
   }
 
   ngOnInit() {
-    // initialize OSM map
+    this.initializeMap();
+
+    // add gesture for slider menu
+    const gesture = this.gestureCtrl.create({
+      gestureName: 'slideMenu',
+      direction: 'y',
+      el: this.mapMenu.nativeElement,
+      onStart: ($event) => { this.onSlideMenuStart($event); },
+      onMove: ($event) => { this.onSlideMenuMove($event); },
+      onEnd: ($event) => { this.onSlideMenuEnd($event); }
+    });
+    gesture.enable();
+
+    this.listTrash();
+  }
+
+  /**
+   * Open modal for applying filters to map
+   */
+  async openFilterModal() {
+    const modal = await this.modalCtrl.create({
+      component: FilterPage,
+      cssClass: 'trash-modal',
+      swipeToClose: true
+    });
+    return await modal.present();
+  }
+
+  /**
+   * Open modal for creating a new trash report
+   */
+  async openTrashAddModal() {
+    const modal = await this.modalCtrl.create({
+      component: TrashAddPage,
+      cssClass: 'trash-modal',
+      swipeToClose: true
+    });
+    return await modal.present();
+  }
+
+  /**
+   * Helper function to format datetime
+   *
+   * @param timestamp Timestamp as string
+   */
+  formatDateTime(timestamp: string) {
+    const datetime = new Date(timestamp);
+    return `${datetime.getUTCDate()}.${datetime.getUTCMonth() + 1}.${datetime.getUTCFullYear()} UM ${datetime.getUTCHours()}:${datetime.getMinutes()}`;
+  }
+
+  /**
+   * Get all trash reports from API and add corresponing markers to map.
+   * Markers contain click handler where report data get switched.
+   */
+  private async listTrash() {
+    const trashReports = await this.apiService.listTrash();
+    trashReports.forEach(report => {
+      const marker = new Marker([report.latitude, report.longitude]);
+      marker.addTo(this.map).on('click', e => {
+        this.selectedPoi = report;
+        this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
+        this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
+      });
+    });
+  }
+
+  /**
+   * Event handler from gesture controller where element moving has been started
+   *
+   * @param $event Sliding event
+   */
+  private onSlideMenuStart($event) {
+    this.mapMenuOffsetY = Number(this.mapMenu.nativeElement.style.bottom.substring(0, this.mapMenu.nativeElement.style.bottom.length - 2));
+  }
+
+  /**
+   * Event handler from gesture controller where element moving has been ended
+   *
+   * @param $event Sliding event
+   */
+  private onSlideMenuEnd($event) {
+    this.mapMenuOffsetY = Number(this.mapMenu.nativeElement.style.bottom.substring(0, this.mapMenu.nativeElement.style.bottom.length - 2));
+  }
+
+  /**
+   * Event handler from gesture controller where element is currently moving
+   *
+   * @param $event Sliding event
+   */
+  private onSlideMenuMove($event) {
+    const newOffsetY = this.mapMenuOffsetY - $event.deltaY;
+    if (newOffsetY <= 0) { // only shift positive Y offset
+      this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', newOffsetY + 'px');
+    }
+  }
+
+  /**
+   * Initialite leaflet map and locator
+   */
+  private initializeMap() {
+    // create leaflet tile layers
     const layerOsm = tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: 'Kartendaten &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> Mitwirkende'
     });
@@ -53,11 +153,13 @@ export class MapPage implements OnInit {
       'Voyager': layerVoyager
     };
 
+    // add tile layers and controls to map
     this.map = new Map('map-leaflet', {
       layers: [layerOsm, layerVoyager],
     }).setView([0, 0], 2);
     L.control.layers(layerMap).addTo(this.map);
 
+    // invalidate map size after 1 second of initialization for rendering purposes
     setTimeout(() => {
       this.map.invalidateSize(true);
       this.locator = L.control.locate({
@@ -66,67 +168,5 @@ export class MapPage implements OnInit {
       }).addTo(this.map);
       this.locator.start();
     }, 1000);
-
-    // add gesture for slider menu
-    const gesture = this.gestureCtrl.create({
-      gestureName: 'slideMenu',
-      direction: 'y',
-      el: this.mapMenu.nativeElement,
-      onStart: ($event) => { this.onSlideMenuStart($event); },
-      onMove: ($event) => { this.onSlideMenuMove($event); },
-      onEnd: ($event) => { this.onSlideMenuEnd($event); }
-    });
-    gesture.enable();
-    this.listTrash();
-  }
-
-  async openFilterModal() {
-    const modal = await this.modalCtrl.create({
-      component: FilterPage,
-      cssClass: 'trash-modal',
-      swipeToClose: true
-    });
-    return await modal.present();
-  }
-
-  async openTrashAddModal() {
-    const modal = await this.modalCtrl.create({
-      component: TrashAddPage,
-      cssClass: 'trash-modal',
-      swipeToClose: true
-    });
-    return await modal.present();
-  }
-
-  formatDateTime(timestamp: string) {
-    const datetime = new Date(timestamp);
-    return `${datetime.getUTCDate()}.${datetime.getUTCMonth() + 1}.${datetime.getUTCFullYear()} UM ${datetime.getUTCHours()}:${datetime.getMinutes()}`;
-  }
-
-  private async listTrash() {
-    const trashReports = await this.apiService.listTrash();
-    trashReports.forEach(report => {
-      const marker = new Marker([report.latitude, report.longitude]);
-      marker.addTo(this.map).on('click', e => {
-        this.selectedPoi = report;
-        this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
-        this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
-      });
-    });
-  }
-
-  private onSlideMenuStart($event) {
-    this.mapMenuOffsetY = Number(this.mapMenu.nativeElement.style.bottom.substring(0, this.mapMenu.nativeElement.style.bottom.length - 2));
-  }
-
-  private onSlideMenuEnd($event) {
-    this.mapMenuOffsetY = Number(this.mapMenu.nativeElement.style.bottom.substring(0, this.mapMenu.nativeElement.style.bottom.length - 2));
-  }
-
-  private onSlideMenuMove($event) {
-    const newOffsetY = this.mapMenuOffsetY - $event.deltaY;
-    if (newOffsetY <= 0) {
-      this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', newOffsetY + 'px');
-    }
   }
 }
