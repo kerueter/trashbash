@@ -32,8 +32,9 @@ ion-tab-bar {
 .trash-modal {
   .modal-wrapper {
     --max-height: 90vh;
-    --border-radius: 28px;
+    --border-radius: 28px 28px 0 0;
     --box-shadow: 0 0 4px black;
+    margin-top: 10vh;
   }
 }
 
