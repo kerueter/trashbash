@@ -23,19 +23,19 @@
         <p>Latitude: {{ selectedPoi.latitude || ''}}</p>
         <p>Longitude: {{ selectedPoi.longitude || ''}}</p>
         <br>
-        <ion-chip *ngIf="selectedPoi.hausmuell">
+        <ion-chip color="primary" *ngIf="selectedPoi.hausmuell">
           <ion-icon name="pin"></ion-icon>
           <ion-label>Hausmüll</ion-label>
         </ion-chip>
-        <ion-chip *ngIf="selectedPoi.gruenabfall">
+        <ion-chip color="success" *ngIf="selectedPoi.gruenabfall">
           <ion-icon name="pin"></ion-icon>
-          <ion-label>Grüenabfall</ion-label>
+          <ion-label>Grünabfall</ion-label>
         </ion-chip>
-        <ion-chip *ngIf="selectedPoi.sperrmuell">
+        <ion-chip color="warning" *ngIf="selectedPoi.sperrmuell">
           <ion-icon name="pin"></ion-icon>
           <ion-label>Sperrmüll</ion-label>
         </ion-chip>
-        <ion-chip *ngIf="selectedPoi.sondermuell">
+        <ion-chip color="danger" *ngIf="selectedPoi.sondermuell">
           <ion-icon name="pin"></ion-icon>
           <ion-label>Sondermüll</ion-label>
         </ion-chip>
