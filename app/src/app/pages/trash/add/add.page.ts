@@ -2,10 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
-import { WebView } from '@ionic-native/ionic-webview/ngx';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-
 import { DomSanitizer } from '@angular/platform-browser';
+
+import { ApiService } from 'src/app/service/api.service';
 
 @Component({
   selector: 'app-trash-add',
@@ -21,9 +20,8 @@ export class TrashAddPage implements OnInit {
     private modalCtrl: ModalController,
     private geolocation: Geolocation,
     private camera: Camera,
-    private webview: WebView,
     public domSanitizer: DomSanitizer,
-    private http: HttpClient
+    private apiService: ApiService
   ) {
     this.username = '';
     this.trashes = [
@@ -48,7 +46,7 @@ export class TrashAddPage implements OnInit {
 
   async takePhoto() {
     const options: CameraOptions = {
-      quality: 100,
+      quality: 50,
       destinationType: this.camera.DestinationType.DATA_URL,
       encodingType: this.camera.EncodingType.JPEG,
       mediaType: this.camera.MediaType.PICTURE
@@ -68,20 +66,23 @@ export class TrashAddPage implements OnInit {
 
   async sendReport() {
     const location = await this.getLocation();
-    this.http.post('http://igf-srv-lehre.igf.uni-osnabrueck.de:1338/trash', {
-      time: new Date().getTime() / 1000,
-      username: this.username,
-      latitude: location.lat,
-      longitude: location.lng,
-      hausMuell: this.trashes[0].isChecked,
-      gruenAbfall: this.trashes[1].isChecked,
-      sperrMuell: this.trashes[2].isChecked,
-      sonderMuell: this.trashes[3].isChecked,
-      photo: this.thumbnail.url
-    }, { headers: { 'Content-Type': 'application/json' } })
-    .subscribe(data => {
-      console.log(data);
-    });
+
+    try {
+      const resp = await this.apiService.postTrash({
+        time: new Date().getTime() / 1000,
+        username: this.username,
+        latitude: location.lat,
+        longitude: location.lng,
+        hausMuell: this.trashes[0].isChecked,
+        gruenAbfall: this.trashes[1].isChecked,
+        sperrMuell: this.trashes[2].isChecked,
+        sonderMuell: this.trashes[3].isChecked,
+        photo: this.thumbnail.url
+      });
+      console.log(resp);
+    } catch (e) {
+      console.error(e);
+    }
     this.closeModal();
   }
 
