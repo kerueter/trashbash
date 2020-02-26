@@ -43,3 +43,13 @@ ion-content ion-toolbar {
   z-index: 1001;
   margin-bottom: 20px;
 }
+
+.btn {
+  &-filter {
+    position: fixed;
+    width: 80px;
+    height: 40px;
+    bottom: 40px;
+    left: calc(50% - 40px);
+  }
+}

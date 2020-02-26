@@ -16,10 +16,11 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { TrashAddPage } from './pages/trash/add/add.page';
 import { FormsModule } from '@angular/forms';
+import { FilterPage } from './pages/modals/filter/filter.page';
 
 @NgModule({
-  declarations: [AppComponent, TrashAddPage],
-  entryComponents: [TrashAddPage],
+  declarations: [AppComponent, TrashAddPage, FilterPage],
+  entryComponents: [TrashAddPage, FilterPage],
   imports: [
     BrowserModule,
     FormsModule,

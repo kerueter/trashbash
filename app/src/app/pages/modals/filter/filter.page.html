@@ -1,0 +1,28 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Filter</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeModal()">Close</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list class="modal-component">
+    <ion-list-header>
+      Radius
+    </ion-list-header>
+    <ion-item>
+      <ion-range min="0" max="200" step="10" snaps="true" ticks="false" pin="true" color="secondary" ></ion-range>
+    </ion-item>
+  </ion-list>
+  <ion-list class="modal-component">
+    <ion-list-header>
+      Müllarten
+    </ion-list-header>
+    <ion-item *ngFor="let entry of trashes">
+      <ion-label>{{entry.val}}</ion-label>
+      <ion-checkbox slot="end" [(ngModel)]="entry.isChecked" [color]="entry.color || 'primary'"></ion-checkbox>
+    </ion-item>
+  </ion-list>
+</ion-content>

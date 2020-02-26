@@ -6,6 +6,7 @@ import * as L from 'leaflet';
 import 'leaflet.locatecontrol';
 
 import { TrashAddPage } from '../trash/add/add.page';
+import { FilterPage } from '../modals/filter/filter.page';
 import { ApiService } from 'src/app/service/api.service';
 import { Trash } from 'src/app/models/Trash';
 
@@ -24,6 +25,8 @@ export class MapPage implements OnInit {
   locator: any;
   markers: Array<Marker>;
   selectedPoi?: Trash;
+
+  filters: { radius: number, trash: Array<boolean> };
 
   constructor(
     private gestureCtrl: GestureController,
@@ -45,10 +48,15 @@ export class MapPage implements OnInit {
       subdomains: 'abcd',
       maxZoom: 19
     });
+    const layerMap = {
+      'OSM': layerOsm,
+      'Voyager': layerVoyager
+    };
 
     this.map = new Map('map-leaflet', {
       layers: [layerOsm, layerVoyager],
     }).setView([0, 0], 2);
+    L.control.layers(layerMap).addTo(this.map);
 
     setTimeout(() => {
       this.map.invalidateSize(true);
@@ -70,6 +78,15 @@ export class MapPage implements OnInit {
     });
     gesture.enable();
     this.listTrash();
+  }
+
+  async openFilterModal() {
+    const modal = await this.modalCtrl.create({
+      component: FilterPage,
+      cssClass: 'trash-modal',
+      swipeToClose: true
+    });
+    return await modal.present();
   }
 
   async openTrashAddModal() {

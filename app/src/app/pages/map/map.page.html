@@ -1,6 +1,13 @@
 <ion-content [fullscreen]="true">
   <div class="map" id="map-leaflet" leaflet></div>
+  
+  <!-- FAB for showing up filter modal -->
+  <ion-button size="small" class="btn-filter" color="light" (click)="openFilterModal()">
+    <ion-icon name="options"></ion-icon>
+    <p style="margin-left: 3px;">FILTER</p>
+  </ion-button>
 
+  <!-- FAB for showing up modal to report trash -->
   <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="fab-trash-add">
     <ion-fab-button size="small" (click)="openTrashAddModal()">
       <ion-icon name="add"></ion-icon>
