@@ -1,7 +1,7 @@
 <ion-content [fullscreen]="true">
   <div class="map" id="map-leaflet" leaflet></div>
 
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed" style="z-index: 1001; margin-bottom: 100px;">
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="fab-trash-add">
     <ion-fab-button size="small" (click)="openTrashAddModal()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
@@ -14,12 +14,11 @@
       </svg>
       <img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80" *ngIf="selectedPoi && selectedPoi.photo"/>
       <ion-card-header *ngIf="selectedPoi">
-        <ion-card-subtitle>TPOI</ion-card-subtitle>
+        <ion-card-subtitle>GEMELDET VON {{ selectedPoi.username || ''}}<br>AM {{ selectedPoi.time ? formatDateTime(selectedPoi.time) : ''}}</ion-card-subtitle>
         <ion-card-title>Trash point of Interest</ion-card-title>
       </ion-card-header>
     
       <ion-card-content *ngIf="selectedPoi">
-        <p>Username: {{ selectedPoi.username || ''}}</p>
         <p>Latitude: {{ selectedPoi.latitude || ''}}</p>
         <p>Longitude: {{ selectedPoi.longitude || ''}}</p>
         <br>

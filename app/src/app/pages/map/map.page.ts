@@ -81,6 +81,11 @@ export class MapPage implements OnInit {
     return await modal.present();
   }
 
+  formatDateTime(timestamp: string) {
+    const datetime = new Date(timestamp);
+    return `${datetime.getUTCDate()}.${datetime.getUTCMonth() + 1}.${datetime.getUTCFullYear()} UM ${datetime.getUTCHours()}:${datetime.getMinutes()}`;
+  }
+
   private async listTrash() {
     const trashReports = await this.apiService.listTrash();
     trashReports.forEach(report => {
