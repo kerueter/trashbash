@@ -19,7 +19,6 @@
       <svg width="40" height="5" class="map-menu-slider">
         <rect width="400" height="100" style="fill:rgb(128,128,128);" />
       </svg>
-      <img class="map-menu-img" [src]="selectedPoi.photo" *ngIf="selectedPoi && selectedPoi.photo"/>
       <ion-card-header *ngIf="selectedPoi">
         <ion-card-subtitle>GEMELDET VON {{ selectedPoi.username || ''}}<br>AM {{ selectedPoi.time ? formatDateTime(selectedPoi.time) : ''}}</ion-card-subtitle>
         <ion-card-title>Trash point of Interest</ion-card-title>
@@ -45,6 +44,8 @@
           <ion-icon name="pin"></ion-icon>
           <ion-label>Sondermüll</ion-label>
         </ion-chip>
+        <img class="map-menu-img" [src]="selectedPoi.photo" *ngIf="selectedPoi && selectedPoi.photo"/>
+        <p style="margin-top: 10px;" *ngIf="!selectedPoi || !selectedPoi.photo">Kein Bild vorhanden</p>
       </ion-card-content>
     </ion-card>
   </div>
