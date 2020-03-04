@@ -21,7 +21,9 @@ export class AppComponent {
   initializeApp() {
     this.platform.ready().then(() => {
       this.statusBar.styleDefault();
-      this.statusBar.overlaysWebView(false);
+      if (this.platform.is('android')) {
+        this.statusBar.overlaysWebView(false);
+      }
       this.splashScreen.hide();
     });
   }
