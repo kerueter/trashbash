@@ -20,8 +20,10 @@ export class MapPage implements OnInit {
   @ViewChild('mapMenu', {static: true, read: ElementRef })
   mapMenu: ElementRef;
   mapMenuOffsetY: number; // store start Y coordinate while sliding menu
+  mapMenuHeight: number;
 
   map: Map;
+  isMapInBackground: boolean;
   locator: any;
   markers: Array<Marker>;
   selectedPoi?: Trash;
@@ -37,6 +39,8 @@ export class MapPage implements OnInit {
   ) {
     this.markers = new Array<Marker>();
     this.selectedPoi = null;
+    this.mapMenuHeight = 16;
+    this.isMapInBackground = false;
   }
 
   async ngOnInit() {
@@ -69,7 +73,8 @@ export class MapPage implements OnInit {
     const modal = await this.modalCtrl.create({
       component: FilterPage,
       cssClass: 'trash-modal',
-      swipeToClose: true
+      swipeToClose: true,
+      showBackdrop: true
     });
     return await modal.present();
   }
@@ -114,8 +119,15 @@ export class MapPage implements OnInit {
     const marker = new Marker([report.latitude, report.longitude]);
     marker.addTo(this.map).on('click', e => {
       this.selectedPoi = report;
+
+      this.map.panTo([report.latitude, report.longitude]);
       this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
       this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
+
+      // store map menu height after rendering
+      setTimeout(() => {
+        this.mapMenuHeight = this.mapMenu.nativeElement.offsetHeight;
+      }, 100);
     });
   }
 
@@ -135,6 +147,13 @@ export class MapPage implements OnInit {
    */
   private onSlideMenuEnd($event) {
     this.mapMenuOffsetY = Number(this.mapMenu.nativeElement.style.bottom.substring(0, this.mapMenu.nativeElement.style.bottom.length - 2));
+
+    if (Math.abs(this.mapMenuOffsetY) < (this.mapMenuHeight / 3)) {
+      this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
+    } else {
+      const newHeight = `-${this.mapMenuHeight + 1}px`;
+      this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', newHeight);
+    }
   }
 
   /**
@@ -144,6 +163,7 @@ export class MapPage implements OnInit {
    */
   private onSlideMenuMove($event) {
     const newOffsetY = this.mapMenuOffsetY - $event.deltaY;
+    const velocityY = $event.velocityY;
     if (newOffsetY <= 0) { // only shift positive Y offset
       this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', newOffsetY + 'px');
     }
