@@ -1,5 +1,9 @@
+ion-content {
+  --background: #000000;
+}
+
 ion-content ion-toolbar {
-  --background: translucent;
+  --background: transculent;
 }
 
 .map {
@@ -9,6 +13,9 @@ ion-content ion-toolbar {
   top: 0;
   left: 0;
   margin-bottom: -10px;
+  transition-property: transform;
+  transition-duration: 0.1s;
+  transition-timing-function: ease-in-out;
 
   &-background {
     transform: scale(0.95);

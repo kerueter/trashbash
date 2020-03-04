@@ -1,5 +1,5 @@
 <ion-content [fullscreen]="true">
-  <div class="map" id="map-leaflet" leaflet></div>
+  <div class="map" id="map-leaflet" [class.map-background]="isMapInBackground" leaflet></div>
   
   <!-- FAB for showing up filter modal -->
   <ion-button size="small" class="btn-filter" color="light" (click)="openFilterModal()">

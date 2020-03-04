@@ -76,6 +76,10 @@ export class MapPage implements OnInit {
       swipeToClose: true,
       showBackdrop: true
     });
+    this.isMapInBackground = true;
+    modal.onWillDismiss().then(() => {
+      this.isMapInBackground = false;
+    });
     return await modal.present();
   }
 
@@ -87,6 +91,10 @@ export class MapPage implements OnInit {
       component: TrashAddPage,
       cssClass: 'trash-modal',
       swipeToClose: true
+    });
+    this.isMapInBackground = true;
+    modal.onWillDismiss().then(() => {
+      this.isMapInBackground = false;
     });
     return await modal.present();
   }
@@ -106,8 +114,12 @@ export class MapPage implements OnInit {
    * Markers contain click handler where report data get switched.
    */
   private async listTrash() {
-    const trashReports = await this.apiService.listTrash();
-    trashReports.forEach(report => this.addMarker(report));
+    try {
+      const trashReports = await this.apiService.listTrash();
+      trashReports.forEach(report => this.addMarker(report));
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   /**
