@@ -3,7 +3,7 @@
     <name>Trash Bash</name>
     <description>The official Trash Bash app</description>
     <author email="krueter@uos.de" href="http://ionicframework.com/">Kevin Rüter</author>
-    <content original-src="index.html" src="http://10.0.1.217:8100" />
+    <content original-src="index.html" src="http://localhost:8100" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
@@ -22,6 +22,7 @@
     <platform name="android">
         <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application" xmlns:android="http://schemas.android.com/apk/res/android">
             <application android:networkSecurityConfig="@xml/network_security_config" />
+            <application android:usesCleartextTraffic="true" />
         </edit-config>
         <resource-file src="resources/android/xml/network_security_config.xml" target="app/src/main/res/xml/network_security_config.xml" />
         <allow-intent href="market:*" />
@@ -120,4 +121,5 @@
     <plugin name="cordova-plugin-file" spec="~6.0.2" />
     <plugin name="cordova-plugin-advanced-http" spec="~2.4.1" />
     <allow-navigation href="http://10.0.1.217:8100" sessionid="73628f59" />
+    <allow-navigation href="http://localhost:8100" sessionid="afa083b5" />
 </widget>
