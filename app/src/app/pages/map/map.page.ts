@@ -28,6 +28,7 @@ export class MapPage implements OnInit {
   isMapInBackground: boolean;
   locator: any;
   markerReports: Array<{ marker: Marker, report: Trash, enabled: boolean}>;
+  currentLocation: {latitude: number, longitude: number};
   selectedPoi?: Trash;
 
   filters: Filters;
@@ -232,7 +233,11 @@ export class MapPage implements OnInit {
   }
 
   private onLocationFound(e) {
-    this.listTrash(e.latitude, e.longitude, this.filters.radius);
+    this.currentLocation = {
+      latitude: e.latitude,
+      longitude: e.longitude
+    }
+    this.listTrash(this.currentLocation.latitude, this.currentLocation.longitude, this.filters.radius);
   }
 
   private onLocationError(e) {
@@ -250,7 +255,7 @@ export class MapPage implements OnInit {
 
     // retrieve trash reports again from backend
     if (radiusChanged) {
-      this.listTrash(52, 8, this.filters.radius);
+      this.listTrash(this.currentLocation.latitude, this.currentLocation.longitude, this.filters.radius);
     }
 
     this.markerReports.forEach(markerReport => {
@@ -260,8 +265,6 @@ export class MapPage implements OnInit {
         this.filters.trash[2] && markerReport.report.sperrmuell ||
         this.filters.trash[3] && markerReport.report.sondermuell) &&
         (!this.filters.username || markerReport.report.username === this.filters.username);
-
-      console.log(markerReport.enabled);
 
       if (markerReport.enabled) {
         markerReport.marker.addTo(this.map).on('click', e => {
