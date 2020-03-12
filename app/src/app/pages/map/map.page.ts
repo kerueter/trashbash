@@ -1,5 +1,6 @@
 import { Component, ViewChild, OnInit, ElementRef, Renderer2 } from '@angular/core';
 import { GestureController, ModalController, LoadingController } from '@ionic/angular';
+import { Storage } from '@ionic/storage';
 
 import { Map, tileLayer, Marker } from 'leaflet';
 import * as L from 'leaflet';
@@ -9,6 +10,7 @@ import { TrashAddPage } from '../modals/trash/add/add.page';
 import { FilterPage } from '../modals/filter/filter.page';
 import { ApiService } from 'src/app/service/api.service';
 import { Trash } from 'src/app/models/Trash';
+import { Filters } from 'src/app/models/Filters';
 
 @Component({
   selector: 'app-map',
@@ -25,19 +27,20 @@ export class MapPage implements OnInit {
   map: Map;
   isMapInBackground: boolean;
   locator: any;
-  markers: Array<Marker>;
+  markerReports: Array<{ marker: Marker, report: Trash, enabled: boolean}>;
   selectedPoi?: Trash;
 
-  filters: { radius: number, trash: Array<boolean> };
+  filters: Filters;
 
   constructor(
     private gestureCtrl: GestureController,
     private renderer: Renderer2,
     private modalCtrl: ModalController,
     private loadingCtrl: LoadingController,
+    private storage: Storage,
     private apiService: ApiService
   ) {
-    this.markers = new Array<Marker>();
+    this.markerReports = new Array<{ marker: Marker, report: Trash, enabled: boolean}>();
     this.selectedPoi = null;
     this.mapMenuHeight = 16;
     this.isMapInBackground = false;
@@ -48,6 +51,17 @@ export class MapPage implements OnInit {
       message: 'App wird initialisiert...'
     });
     await loading.present();
+
+    // apply filters
+    const filterRadius: number = await this.storage.get('filter-radius');
+    const filterTrash: Array<boolean> = await this.storage.get('filter-trash');
+    const filterUsername: string = await this.storage.get('filter-username');
+
+    this.filters = {
+      radius: filterRadius || 100,
+      trash: filterTrash && filterTrash.length === 4 ? filterTrash : [true, true, true, true],
+      username: filterUsername || ''
+    };
 
     this.initializeMap();
 
@@ -61,8 +75,6 @@ export class MapPage implements OnInit {
       onEnd: ($event) => { this.onSlideMenuEnd($event); }
     });
     gesture.enable();
-
-    this.listTrash();
     await loading.dismiss();
   }
 
@@ -72,13 +84,20 @@ export class MapPage implements OnInit {
   async openFilterModal() {
     const modal = await this.modalCtrl.create({
       component: FilterPage,
+      componentProps: {
+        filters: this.filters
+      },
       cssClass: 'trash-modal',
       swipeToClose: true,
       showBackdrop: true
     });
     this.isMapInBackground = true;
-    modal.onWillDismiss().then(() => {
+    modal.onWillDismiss().then(data => {
+      const radiusChanged = this.filters.radius !== data.data.filters.radius;
+
+      this.filters = data.data.filters;
       this.isMapInBackground = false;
+      this.applyFilters(radiusChanged);
     });
     return await modal.present();
   }
@@ -113,10 +132,11 @@ export class MapPage implements OnInit {
    * Get all trash reports from API and add corresponing markers to map.
    * Markers contain click handler where report data get switched.
    */
-  private async listTrash() {
+  private async listTrash(latitude: number, longitude: number, radius: number) {
     try {
-      const trashReports = await this.apiService.listTrash();
+      const trashReports = await this.apiService.listTrash(latitude, longitude, radius);
       trashReports.forEach(report => this.addMarker(report));
+      this.applyFilters(false);
     } catch (e) {
       console.error(e);
     }
@@ -128,18 +148,10 @@ export class MapPage implements OnInit {
    * @param report Trash report object
    */
   private addMarker(report: Trash) {
-    const marker = new Marker([report.latitude, report.longitude]);
-    marker.addTo(this.map).on('click', e => {
-      this.selectedPoi = report;
-
-      this.map.panTo([report.latitude, report.longitude]);
-      this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
-      this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
-
-      // store map menu height after rendering
-      setTimeout(() => {
-        this.mapMenuHeight = this.mapMenu.nativeElement.offsetHeight;
-      }, 100);
+    this.markerReports.push({
+      marker: new Marker([report.latitude, report.longitude]),
+      report,
+      enabled: true
     });
   }
 
@@ -203,6 +215,9 @@ export class MapPage implements OnInit {
     this.map = new Map('map-leaflet', {
       layers: [layerOsm, layerVoyager],
     }).setView([0, 0], 2);
+    this.map.on('locationfound', this.onLocationFound.bind(this));
+    this.map.on('locationerror', this.onLocationError.bind(this));
+
     L.control.layers(layerMap).addTo(this.map);
 
     // invalidate map size after 1 second of initialization for rendering purposes
@@ -214,6 +229,58 @@ export class MapPage implements OnInit {
       }).addTo(this.map);
       this.locator.start();
     }, 1000);
+  }
+
+  private onLocationFound(e) {
+    this.listTrash(e.latitude, e.longitude, this.filters.radius);
+  }
+
+  private onLocationError(e) {
+    alert(e.message);
+  }
+
+  private applyFilters(radiusChanged: boolean) {
+    console.log('Apply filters: ', this.filters);
+
+    this.markerReports.forEach(markerReport => {
+      if (markerReport.enabled) {
+        markerReport.marker.remove();
+      }
+    });
+
+    // retrieve trash reports again from backend
+    if (radiusChanged) {
+      this.listTrash(52, 8, this.filters.radius);
+    }
+
+    this.markerReports.forEach(markerReport => {
+      markerReport.enabled =
+        (this.filters.trash[0] && markerReport.report.hausmuell ||
+        this.filters.trash[1] && markerReport.report.gruenabfall ||
+        this.filters.trash[2] && markerReport.report.sperrmuell ||
+        this.filters.trash[3] && markerReport.report.sondermuell) &&
+        (!this.filters.username || markerReport.report.username === this.filters.username);
+
+      console.log(markerReport.enabled);
+
+      if (markerReport.enabled) {
+        markerReport.marker.addTo(this.map).on('click', e => {
+          this.selectedPoi = markerReport.report;
+
+          this.map.panTo([
+            markerReport.report.latitude,
+            markerReport.report.longitude
+          ]);
+          this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
+          this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
+
+          // store map menu height after rendering
+          setTimeout(() => {
+            this.mapMenuHeight = this.mapMenu.nativeElement.offsetHeight;
+          }, 100);
+        });
+      }
+    });
   }
 
   /**

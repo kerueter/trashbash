@@ -13,7 +13,7 @@
       Radius
     </ion-list-header>
     <ion-item>
-      <ion-range min="0" max="200" step="10" snaps="true" ticks="false" pin="true" color="secondary" ></ion-range>
+      <ion-range min="0" max="200" step="10" snaps="true" ticks="false" pin="true" color="secondary" [(ngModel)]="filters.radius"></ion-range>
     </ion-item>
   </ion-list>
   <ion-list class="modal-component">
@@ -23,6 +23,14 @@
     <ion-item *ngFor="let entry of trashes">
       <ion-label>{{entry.val}}</ion-label>
       <ion-checkbox slot="end" [(ngModel)]="entry.isChecked" [color]="entry.color || 'primary'"></ion-checkbox>
+    </ion-item>
+  </ion-list>
+  <ion-list class="modal-component">
+    <ion-list-header>
+      Username
+    </ion-list-header>
+    <ion-item>
+      <ion-input clearInput [(ngModel)]="filters.username"></ion-input>
     </ion-item>
   </ion-list>
 </ion-content>
