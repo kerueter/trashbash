@@ -3,7 +3,7 @@ import { GestureController, ModalController, LoadingController } from '@ionic/an
 import { Storage } from '@ionic/storage';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 
-import { Map, tileLayer, Marker, icon } from 'leaflet';
+import { Map, tileLayer, Marker, icon, control } from 'leaflet';
 import * as L from 'leaflet';
 import 'leaflet.locatecontrol';
 
@@ -33,7 +33,7 @@ export class MapPage implements OnInit {
 
   filters: Filters;
 
-  private currentLocation: {marker: Marker, latitude: number, longitude: number};
+  private currentLocation: {marker: Marker, follow: boolean};
   private locationObserver: any;
 
   constructor(
@@ -207,21 +207,24 @@ export class MapPage implements OnInit {
       const currentLoc = await this.getLocation();
 
       const userLocationIcon = icon({
-        iconUrl: '../../assets/icon/location.svg',
-        iconSize: [50, 50],
+        iconUrl: '../../assets/icon/location_my.svg',
+        iconSize: [24, 24],
         iconAnchor: [22, 94]
       });
       this.currentLocation = {
         marker: new Marker([currentLoc.lat, currentLoc.lng], { icon: userLocationIcon }),
-        latitude: currentLoc.lat,
-        longitude: currentLoc.lng
+        follow: true
       };
+
+      // setup subscriber for user location
       this.locationObserver.subscribe(locationData => {
-        this.currentLocation.latitude = locationData.coords.latitude;
-        this.currentLocation.longitude = locationData.coords.longitude;
         this.currentLocation.marker.setLatLng([
-          this.currentLocation.latitude, this.currentLocation.longitude
+          locationData.coords.latitude, locationData.coords.longitude
         ]);
+
+        if (this.currentLocation.follow) {
+          this.map.panTo(this.currentLocation.marker.getLatLng());
+        }
       });
     } catch (e) {
       console.error(e);
@@ -246,23 +249,38 @@ export class MapPage implements OnInit {
       layers: [layerOsm, layerVoyager],
     }).setView([0, 0], 2);
     L.control.layers(layerMap).addTo(this.map);
+    (L.Control as any).Location = L.Control.extend(
+    {
+        options:
+        {
+            position: 'topleft',
+        },
+        onAdd: (map) => {
+            const controlDiv = L.DomUtil.create('div', 'leaflet-draw-toolbar leaflet-bar');
+            L.DomEvent
+              .addListener(controlDiv, 'click', L.DomEvent.stopPropagation)
+              .addListener(controlDiv, 'click', L.DomEvent.preventDefault)
+              .addListener(controlDiv, 'click', () => {
+                this.currentLocation.follow = !this.currentLocation.follow;
+                if (this.currentLocation.follow) {
+                  this.map.panTo(this.currentLocation.marker.getLatLng());
+                }
+              });
+            const controlUI = L.DomUtil.create('a', '', controlDiv);
+            return controlDiv;
+        }
+    });
+    const locationControl = new (L.Control as any).Location();
+    this.map.addControl(locationControl);
 
     // invalidate map size after 1 second of initialization for rendering purposes
     setTimeout(() => {
       this.map.invalidateSize(true);
       console.log(this.currentLocation);
       this.currentLocation.marker.addTo(this.map);
-      this.map.setView([
-        this.currentLocation.latitude,
-        this.currentLocation.longitude
-      ], this.map.getMaxZoom());
-      /*this.locator = L.control.locate({
-        showPopup: false,
-        drawCircle: false
-      }).addTo(this.map);
-      this.locator.start();*/
+      this.map.setView(this.currentLocation.marker.getLatLng(), this.map.getMaxZoom());
     }, 1000);
-    await this.listTrash(this.currentLocation.latitude, this.currentLocation.longitude, this.filters.radius);
+    await this.listTrash(this.currentLocation.marker.getLatLng()[0], this.currentLocation.marker.getLatLng()[1], this.filters.radius);
   }
 
   private async getLocation(): Promise<{lat: number, lng: number}> {
@@ -299,7 +317,7 @@ export class MapPage implements OnInit {
 
       this.markerReports = [];
 
-      await this.listTrash(this.currentLocation.latitude, this.currentLocation.longitude, this.filters.radius);
+      await this.listTrash(this.currentLocation.marker.getLatLng()[0], this.currentLocation.marker.getLatLng()[1], this.filters.radius);
       await loading.dismiss();
     }
 
@@ -314,6 +332,8 @@ export class MapPage implements OnInit {
       if (markerReport.enabled) {
         markerReport.marker.addTo(this.map).on('click', e => {
           this.selectedPoi = markerReport.report;
+
+          this.currentLocation.follow = false;
 
           this.map.panTo([
             markerReport.report.latitude,
