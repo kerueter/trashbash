@@ -1,8 +1,9 @@
 import { Component, ViewChild, OnInit, ElementRef, Renderer2 } from '@angular/core';
 import { GestureController, ModalController, LoadingController } from '@ionic/angular';
 import { Storage } from '@ionic/storage';
+import { Geolocation } from '@ionic-native/geolocation/ngx';
 
-import { Map, tileLayer, Marker } from 'leaflet';
+import { Map, tileLayer, Marker, icon } from 'leaflet';
 import * as L from 'leaflet';
 import 'leaflet.locatecontrol';
 
@@ -28,10 +29,12 @@ export class MapPage implements OnInit {
   isMapInBackground: boolean;
   locator: any;
   markerReports: Array<{ marker: Marker, report: Trash, enabled: boolean}>;
-  currentLocation: {latitude: number, longitude: number};
   selectedPoi?: Trash;
 
   filters: Filters;
+
+  private currentLocation: {marker: Marker, latitude: number, longitude: number};
+  private locationObserver: any;
 
   constructor(
     private gestureCtrl: GestureController,
@@ -39,7 +42,8 @@ export class MapPage implements OnInit {
     private modalCtrl: ModalController,
     private loadingCtrl: LoadingController,
     private storage: Storage,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private geolocation: Geolocation
   ) {
     this.markerReports = new Array<{ marker: Marker, report: Trash, enabled: boolean}>();
     this.selectedPoi = null;
@@ -197,7 +201,32 @@ export class MapPage implements OnInit {
   /**
    * Initialite leaflet map and locator
    */
-  private initializeMap() {
+  private async initializeMap() {
+    // get and subscribe user location
+    try {
+      const currentLoc = await this.getLocation();
+
+      const userLocationIcon = icon({
+        iconUrl: '../../assets/icon/location.svg',
+        iconSize: [50, 50],
+        iconAnchor: [22, 94]
+      });
+      this.currentLocation = {
+        marker: new Marker([currentLoc.lat, currentLoc.lng], { icon: userLocationIcon }),
+        latitude: currentLoc.lat,
+        longitude: currentLoc.lng
+      };
+      this.locationObserver.subscribe(locationData => {
+        this.currentLocation.latitude = locationData.coords.latitude;
+        this.currentLocation.longitude = locationData.coords.longitude;
+        this.currentLocation.marker.setLatLng([
+          this.currentLocation.latitude, this.currentLocation.longitude
+        ]);
+      });
+    } catch (e) {
+      console.error(e);
+    }
+
     // create leaflet tile layers
     const layerOsm = tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: 'Kartendaten &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> Mitwirkende'
@@ -216,36 +245,44 @@ export class MapPage implements OnInit {
     this.map = new Map('map-leaflet', {
       layers: [layerOsm, layerVoyager],
     }).setView([0, 0], 2);
-    this.map.on('locationfound', this.onLocationFound.bind(this));
-    this.map.on('locationerror', this.onLocationError.bind(this));
-
     L.control.layers(layerMap).addTo(this.map);
 
     // invalidate map size after 1 second of initialization for rendering purposes
     setTimeout(() => {
       this.map.invalidateSize(true);
-      this.locator = L.control.locate({
+      console.log(this.currentLocation);
+      this.currentLocation.marker.addTo(this.map);
+      this.map.setView([
+        this.currentLocation.latitude,
+        this.currentLocation.longitude
+      ], this.map.getMaxZoom());
+      /*this.locator = L.control.locate({
         showPopup: false,
         drawCircle: false
       }).addTo(this.map);
-      this.locator.start();
+      this.locator.start();*/
     }, 1000);
+    await this.listTrash(this.currentLocation.latitude, this.currentLocation.longitude, this.filters.radius);
   }
 
-  private onLocationFound(e) {
-    this.currentLocation = {
-      latitude: e.latitude,
-      longitude: e.longitude
+  private async getLocation(): Promise<{lat: number, lng: number}> {
+    let data: any;
+    try {
+      data = await this.geolocation.getCurrentPosition();
+    } catch (e) {
+      throw new Error('Unable to get current position.');
     }
-    this.listTrash(this.currentLocation.latitude, this.currentLocation.longitude, this.filters.radius);
+
+    this.locationObserver = this.geolocation.watchPosition();
+    return {
+      lat: data.coords.latitude,
+      lng: data.coords.longitude
+    };
   }
 
-  private onLocationError(e) {
-    alert(e.message);
-  }
-
-  private applyFilters(radiusChanged: boolean) {
+  private async applyFilters(radiusChanged: boolean) {
     console.log('Apply filters: ', this.filters);
+    console.log(radiusChanged);
 
     this.markerReports.forEach(markerReport => {
       if (markerReport.enabled) {
@@ -255,7 +292,15 @@ export class MapPage implements OnInit {
 
     // retrieve trash reports again from backend
     if (radiusChanged) {
-      this.listTrash(this.currentLocation.latitude, this.currentLocation.longitude, this.filters.radius);
+      const loading = await this.loadingCtrl.create({
+        message: 'App wird initialisiert...'
+      });
+      await loading.present();
+
+      this.markerReports = [];
+
+      await this.listTrash(this.currentLocation.latitude, this.currentLocation.longitude, this.filters.radius);
+      await loading.dismiss();
     }
 
     this.markerReports.forEach(markerReport => {
