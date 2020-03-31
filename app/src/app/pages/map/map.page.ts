@@ -255,8 +255,8 @@ export class MapPage implements OnInit {
         {
             position: 'topleft',
         },
-        onAdd: (map) => {
-            const controlDiv = L.DomUtil.create('div', 'leaflet-draw-toolbar leaflet-bar');
+        onAdd: () => {
+            const controlDiv = L.DomUtil.create('div', 'leaflet-draw-toolbar leaflet-bar leaflet-control-location');
             L.DomEvent
               .addListener(controlDiv, 'click', L.DomEvent.stopPropagation)
               .addListener(controlDiv, 'click', L.DomEvent.preventDefault)
@@ -266,7 +266,8 @@ export class MapPage implements OnInit {
                   this.map.panTo(this.currentLocation.marker.getLatLng());
                 }
               });
-            const controlUI = L.DomUtil.create('a', '', controlDiv);
+            const controlUI = L.DomUtil.create('a', 'leaflet-control-location', controlDiv);
+
             return controlDiv;
         }
     });
@@ -276,11 +277,10 @@ export class MapPage implements OnInit {
     // invalidate map size after 1 second of initialization for rendering purposes
     setTimeout(() => {
       this.map.invalidateSize(true);
-      console.log(this.currentLocation);
       this.currentLocation.marker.addTo(this.map);
       this.map.setView(this.currentLocation.marker.getLatLng(), this.map.getMaxZoom());
     }, 1000);
-    await this.listTrash(this.currentLocation.marker.getLatLng()[0], this.currentLocation.marker.getLatLng()[1], this.filters.radius);
+    await this.listTrash(this.currentLocation.marker.getLatLng().lat, this.currentLocation.marker.getLatLng().lng, this.filters.radius);
   }
 
   private async getLocation(): Promise<{lat: number, lng: number}> {
@@ -300,7 +300,6 @@ export class MapPage implements OnInit {
 
   private async applyFilters(radiusChanged: boolean) {
     console.log('Apply filters: ', this.filters);
-    console.log(radiusChanged);
 
     this.markerReports.forEach(markerReport => {
       if (markerReport.enabled) {
@@ -317,7 +316,7 @@ export class MapPage implements OnInit {
 
       this.markerReports = [];
 
-      await this.listTrash(this.currentLocation.marker.getLatLng()[0], this.currentLocation.marker.getLatLng()[1], this.filters.radius);
+      await this.listTrash(this.currentLocation.marker.getLatLng().lat, this.currentLocation.marker.getLatLng().lng, this.filters.radius);
       await loading.dismiss();
     }
 
@@ -339,6 +338,7 @@ export class MapPage implements OnInit {
             markerReport.report.latitude,
             markerReport.report.longitude
           ]);
+
           this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
           this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
 
