@@ -10,6 +10,7 @@ import { StatusBar } from '@ionic-native/status-bar/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera } from '@ionic-native/camera/ngx';
 import { File } from '@ionic-native/file/ngx';
+import { FileTransfer } from '@ionic-native/file-transfer/ngx';
 import { WebView } from '@ionic-native/ionic-webview/ngx';
 import { HTTP } from '@ionic-native/http/ngx';
 
@@ -36,6 +37,7 @@ import { FilterPage } from './pages/modals/filter/filter.page';
     Geolocation,
     Camera,
     File,
+    FileTransfer,
     WebView,
     HTTP,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }

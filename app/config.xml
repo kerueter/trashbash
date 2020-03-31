@@ -3,7 +3,7 @@
     <name>Trash Bash</name>
     <description>The official Trash Bash app</description>
     <author email="krueter@uos.de" href="http://ionicframework.com/">Kevin Rüter</author>
-    <content original-src="index.html" src="http://localhost:8100" />
+    <content src="index.html" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
@@ -119,7 +119,7 @@
     </plugin>
     <plugin name="cordova-plugin-camera" spec="~4.1.0" />
     <plugin name="cordova-plugin-file" spec="~6.0.2" />
+    <plugin name="cordova-plugin-file-transfer" spec="~6.0.2" />
     <plugin name="cordova-plugin-advanced-http" spec="~2.4.1" />
     <allow-navigation href="http://10.0.1.217:8100" sessionid="73628f59" />
-    <allow-navigation href="http://localhost:8100" sessionid="afa083b5" />
 </widget>
