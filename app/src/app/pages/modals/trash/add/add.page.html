@@ -19,9 +19,9 @@
     </ion-item>
   </ion-list>
   <ion-thumbnail class="modal-component modal-component-thumbnail">
-    <img [src]="domSanitizer.bypassSecurityTrustUrl(thumbnail.url)">
+    <img [src]="photo.captured ? pathForImage(photo.url) : domSanitizer.bypassSecurityTrustUrl(photo.url)">
   </ion-thumbnail>
-  <ion-button expand="block" class="modal-component" (click)="takePhoto()">
+  <ion-button expand="block" class="modal-component" (click)="selectImage()">
     <ion-icon name="camera" class="btn-icon"></ion-icon>
     Foto knipsen
   </ion-button>

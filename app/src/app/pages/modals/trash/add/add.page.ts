@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { ModalController, LoadingController } from '@ionic/angular';
+import { DomSanitizer } from '@angular/platform-browser';
+
+import { ModalController, LoadingController, ActionSheetController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
-import { DomSanitizer } from '@angular/platform-browser';
+import { WebView } from '@ionic-native/ionic-webview/ngx';
 
 import { ApiService } from 'src/app/service/api.service';
 
@@ -14,14 +16,16 @@ import { ApiService } from 'src/app/service/api.service';
 export class TrashAddPage implements OnInit {
   username: string;
   trashes: Array<{ val: string, isChecked: boolean, color: string}>;
-  thumbnail: { url: string, captured: boolean };
+  photo: { url: string, captured: boolean };
 
   constructor(
+    public domSanitizer: DomSanitizer,
     private modalCtrl: ModalController,
     private loadingCtrl: LoadingController,
+    private actionSheetController: ActionSheetController,
     private geolocation: Geolocation,
     private camera: Camera,
-    public domSanitizer: DomSanitizer,
+    private webview: WebView,
     private apiService: ApiService
   ) {
     this.username = '';
@@ -31,8 +35,8 @@ export class TrashAddPage implements OnInit {
       { val: 'Sperrmüll', isChecked: false, color: 'warning'},
       { val: 'Sondermüll', isChecked: false, color: 'danger' }
     ];
-    this.thumbnail = {
-      url: 'https://gravatar.com/avatar/dba6bae8c566f9d4041fb9cd9ada7741?d=identicon&f=y',
+    this.photo = {
+      url: 'https://www.creativefabrica.com/wp-content/uploads/2018/07/Camera-icon-by-harisprawoto-1-580x386.jpg',
       captured: false
     };
   }
@@ -45,23 +49,59 @@ export class TrashAddPage implements OnInit {
     });
   }
 
-  async takePhoto() {
+  async selectImage() {
+    const actionSheet = await this.actionSheetController.create({
+      header: 'Quelle wählen',
+      buttons: [
+      {
+        text: 'Foto aufnehmen',
+        icon: 'camera',
+        handler: () => {
+          this.getImage(this.camera.PictureSourceType.CAMERA);
+        }
+      },
+      {
+        text: 'Aus Fotogalerie',
+        icon: 'share',
+        handler: () => {
+          this.getImage(this.camera.PictureSourceType.PHOTOLIBRARY);
+        }
+      },
+      {
+        text: 'Cancel',
+        icon: 'close',
+        role: 'cancel',
+        handler: () => {
+          console.log('Cancel clicked');
+        }
+      }]
+    });
+    await actionSheet.present();
+  }
+
+  async getImage(sourceType: number) {
     const options: CameraOptions = {
-      quality: 50,
-      destinationType: this.camera.DestinationType.DATA_URL,
+      quality: 100,
+      sourceType,
+      destinationType: this.camera.DestinationType.FILE_URI,
       encodingType: this.camera.EncodingType.JPEG,
       mediaType: this.camera.MediaType.PICTURE
     };
-    let imageData: any;
     try {
-      imageData = await this.camera.getPicture(options);
+      const imageData = await this.camera.getPicture(options);
+      this.photo.url = imageData;
+      this.photo.captured = true;
     } catch (e) {
       console.error(e);
     }
-    if (imageData) {
-      // this.thumbnail.url = this.webview.convertFileSrc(imageData);
-      this.thumbnail.url = 'data:image/jpeg;base64,' + imageData;
-      this.thumbnail.captured = true;
+  }
+
+  pathForImage(img: string) {
+    if (img === null) {
+      return '';
+    } else {
+      const converted = this.webview.convertFileSrc(img);
+      return converted;
     }
   }
 
@@ -73,6 +113,16 @@ export class TrashAddPage implements OnInit {
 
     try {
       const location = await this.getLocation();
+
+      // first upload photo, if captured
+      let photoLocation = null;
+      if (this.photo.captured) {
+        const photoRes = await this.apiService.postTrashImage(this.photo.url);
+        const parsedPhotoRes = JSON.parse(photoRes.response);
+        console.log(parsedPhotoRes);
+        photoLocation = parsedPhotoRes.Location;
+      }
+
       const resp = await this.apiService.postTrash({
         time: new Date().getTime() / 1000,
         username: this.username,
@@ -82,7 +132,7 @@ export class TrashAddPage implements OnInit {
         gruenAbfall: this.trashes[1].isChecked,
         sperrMuell: this.trashes[2].isChecked,
         sonderMuell: this.trashes[3].isChecked,
-        photo: this.thumbnail.url
+        photo: photoLocation ? photoLocation : ''
       });
       console.log(resp);
     } catch (e) {
