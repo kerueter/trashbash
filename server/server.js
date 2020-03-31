@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const geojson = require('geojson');
 const expressWs = require('express-ws')(app);
 const fileUpload = require('express-fileupload');
 const crypto = require('crypto');
@@ -16,7 +17,8 @@ const client = new Client({
 client.connect();
 
 app.use(cors());
-app.use(express.json({limit: '5mb'}));
+app.use(express.json({limit: '10mb'}));
+app.use(express.urlencoded({limit: "10mb", extended: true, parameterLimit: 10000}));
 app.use('/media', express.static(__dirname + '/media'));
 app.use(fileUpload({
 	useTempFiles : true,
@@ -62,7 +64,8 @@ app.get('/trash', cors(), (req, res) => {
         validRows.push(dbRow);
       }
     });
-    res.status(200).send(validRows);
+    const validRowsGeoJson = geojson.parse(validRows, { Point: ['latitude', 'longitude'] });
+    res.status(200).send(validRowsGeoJson);
   });
 });
 
@@ -76,10 +79,11 @@ app.post('/trash', cors(), (req, res) => {
       res.status(500).send("Error");
       return;
     }
+    const rowGeoJson = geojson.parse(dbRes.rows[0], { Point: ['latitude', 'longitude'] })
     regWs.clients.forEach(client => {
-      client.send(JSON.stringify(dbRes.rows[0]));
+      client.send(JSON.stringify(rowGeoJson));
     });
-    res.status(200).send(dbRes.rows[0]);
+    res.status(200).send(rowGeoJson);
   });
 });
 
@@ -88,17 +92,16 @@ app.post('/trash/images/upload', (req, res) => {
     return res.status(400).send('No files were uploaded.');
   }
 
-	Object.keys(req.files).forEach(fileKey => {
+  console.log('Got files: ', Object.keys(req.files));
+  Object.keys(req.files).forEach(fileKey => {
     const hash = crypto.createHash('md5').update(crypto.randomBytes(16)).digest('hex');
-    const fileLocation = `/media/uploads/${hash}.jpg`;
-		req.files[fileKey].mv(`./${fileLocation}`, (err) => {
-			if (err) {
-				return res.status(500).send(err);
-			}
-		});
-	});
-	res.status(200).send({
-    'Location': fileLocation
+    const filePath = `media/uploads/${hash}.jpg`
+    req.files[fileKey].mv(filePath, (err) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+      res.status(200).send({ Location: filePath });
+    });
   });
 });
 
