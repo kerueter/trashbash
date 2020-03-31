@@ -46,10 +46,32 @@ app.get('/trash', cors(), (req, res) => {
     return;
   }
 
-  const queryMessage = 'SELECT * FROM trash ORDER BY id ASC';
-  client.query(queryMessage, (err, dbRes) => {
-    if(err) {
-      res.status(500).send("Error");
+  let startDate;
+  let endDate;
+  const dateCurrent = new Date();
+  if (!req.query.startDate) {
+    const dateLastMonth = new Date(dateCurrent.getTime());
+    dateLastMonth.setDate(dateLastMonth.getDate() - 14);
+    startDate = new Date(dateLastMonth.getTime());
+  } else {
+    startDate = new Date(req.query.startDate);
+  }
+
+  if (!req.query.endDate) {
+    endDate = new Date(dateCurrent.getTime());
+  } else {
+    endDate = new Date(req.query.endDate);
+  }
+
+
+  const queryMessage = 'SELECT * FROM trash WHERE time BETWEEN $1 AND $2 ORDER BY id ASC';
+  const queryParams = [startDate, endDate];
+
+  console.log(`Get trash between ${startDate.toISOString()} and ${endDate.toISOString()}`);
+
+  client.query(queryMessage, queryParams, (err, dbRes) => {
+    if (err) {
+      res.status(500).send({ message: `Error: ${err.message}` });
       return;
     }
 
@@ -76,7 +98,7 @@ app.post('/trash', cors(), (req, res) => {
   client.query(queryText, queryVals, (err, dbRes) => {
     if(err) {
       console.log(err);
-      res.status(500).send("Error");
+      res.status(500).send({ message: `Error: ${err.message}` });
       return;
     }
     const rowGeoJson = geojson.parse(dbRes.rows[0], { Point: ['latitude', 'longitude'] })
@@ -98,7 +120,8 @@ app.post('/trash/images/upload', (req, res) => {
     const filePath = `media/uploads/${hash}.jpg`
     req.files[fileKey].mv(filePath, (err) => {
       if (err) {
-        return res.status(500).send(err);
+        res.status(500).send({ message: `Error: ${err.message}` });
+        return;
       }
       res.status(200).send({ Location: filePath });
     });
