@@ -1,17 +1,17 @@
 import { Component, ViewChild, OnInit, ElementRef, Renderer2 } from '@angular/core';
 import { GestureController, ModalController, LoadingController } from '@ionic/angular';
-import { Storage } from '@ionic/storage';
-import { Geolocation } from '@ionic-native/geolocation/ngx';
 
 import { Map, tileLayer, Marker, icon, control } from 'leaflet';
 import * as L from 'leaflet';
 import 'leaflet.locatecontrol';
 
+import { MapService } from 'src/app/service/map.service';
+
 import { TrashAddPage } from '../modals/trash/add/add.page';
 import { FilterPage } from '../modals/filter/filter.page';
-import { ApiService } from 'src/app/service/api.service';
+
 import { Trash } from 'src/app/models/Trash';
-import { Filters } from 'src/app/models/Filters';
+import { Filter } from 'src/app/models/Filters';
 
 @Component({
   selector: 'app-map',
@@ -31,19 +31,14 @@ export class MapPage implements OnInit {
   markerReports: Array<{ marker: Marker, report: Trash, enabled: boolean}>;
   selectedPoi?: Trash;
 
-  filters: Filters;
-
-  private currentLocation: {marker: Marker, follow: boolean};
-  private locationObserver: any;
+  private currentLocation: { marker: Marker, follow: boolean };
 
   constructor(
     private gestureCtrl: GestureController,
     private renderer: Renderer2,
     private modalCtrl: ModalController,
     private loadingCtrl: LoadingController,
-    private storage: Storage,
-    private apiService: ApiService,
-    private geolocation: Geolocation
+    private mapService: MapService
   ) {
     this.markerReports = new Array<{ marker: Marker, report: Trash, enabled: boolean}>();
     this.selectedPoi = null;
@@ -57,17 +52,7 @@ export class MapPage implements OnInit {
     });
     await loading.present();
 
-    // apply filters
-    const filterRadius: number = await this.storage.get('filter-radius');
-    const filterTrash: Array<boolean> = await this.storage.get('filter-trash');
-    const filterUsername: string = await this.storage.get('filter-username');
-
-    this.filters = {
-      radius: filterRadius || 100,
-      trash: filterTrash && filterTrash.length === 4 ? filterTrash : [true, true, true, true],
-      username: filterUsername || ''
-    };
-
+    // initialize leaflet map
     this.initializeMap();
 
     // add gesture for slider menu
@@ -80,6 +65,7 @@ export class MapPage implements OnInit {
       onEnd: ($event) => { this.onSlideMenuEnd($event); }
     });
     gesture.enable();
+
     await loading.dismiss();
   }
 
@@ -90,7 +76,7 @@ export class MapPage implements OnInit {
     const modal = await this.modalCtrl.create({
       component: FilterPage,
       componentProps: {
-        filters: this.filters
+        filter: this.mapService.getFilters()
       },
       cssClass: 'trash-modal',
       swipeToClose: true,
@@ -98,11 +84,20 @@ export class MapPage implements OnInit {
     });
     this.isMapInBackground = true;
     modal.onWillDismiss().then(data => {
-      const radiusChanged = this.filters.radius !== data.data.filters.radius;
+      const modalFilter = new Filter(
+        data.data.filter.radius,
+        data.data.filter.trash,
+        data.data.filter.username,
+        data.data.filter.startDate,
+        data.data.filter.endDate
+      );
+      const filterChanged = !this.mapService.getFilters().equals(modalFilter);
 
-      this.filters = data.data.filters;
+      if (filterChanged) {
+        this.mapService.setFilters(modalFilter);
+        this.applyFilters(filterChanged);
+      }
       this.isMapInBackground = false;
-      this.applyFilters(radiusChanged);
     });
     return await modal.present();
   }
@@ -131,20 +126,6 @@ export class MapPage implements OnInit {
   formatDateTime(timestamp: string) {
     const datetime = new Date(timestamp);
     return `${this.pad(datetime.getUTCDate(), 2)}.${this.pad(datetime.getUTCMonth() + 1, 2)}.${datetime.getUTCFullYear()} UM ${this.pad(datetime.getUTCHours(), 2)}:${this.pad(datetime.getMinutes(), 2)}`;
-  }
-
-  /**
-   * Get all trash reports from API and add corresponing markers to map.
-   * Markers contain click handler where report data get switched.
-   */
-  private async listTrash(latitude: number, longitude: number, radius: number) {
-    try {
-      const trashReports = await this.apiService.listTrash(latitude, longitude, radius);
-      trashReports.forEach(report => this.addMarker(report));
-      this.applyFilters(false);
-    } catch (e) {
-      console.error(e);
-    }
   }
 
   /**
@@ -204,12 +185,11 @@ export class MapPage implements OnInit {
   private async initializeMap() {
     // get and subscribe user location
     try {
-      const currentLoc = await this.getLocation();
+      const currentLoc = await this.mapService.getUserLocation();
 
       const userLocationIcon = icon({
         iconUrl: '../../assets/icon/location_my.svg',
-        iconSize: [24, 24],
-        iconAnchor: [22, 94]
+        iconSize: [40, 40],
       });
       this.currentLocation = {
         marker: new Marker([currentLoc.lat, currentLoc.lng], { icon: userLocationIcon }),
@@ -217,7 +197,7 @@ export class MapPage implements OnInit {
       };
 
       // setup subscriber for user location
-      this.locationObserver.subscribe(locationData => {
+      this.mapService.getUserLocationObserver().subscribe(locationData => {
         this.currentLocation.marker.setLatLng([
           locationData.coords.latitude, locationData.coords.longitude
         ]);
@@ -280,26 +260,20 @@ export class MapPage implements OnInit {
       this.currentLocation.marker.addTo(this.map);
       this.map.setView(this.currentLocation.marker.getLatLng(), this.map.getMaxZoom());
     }, 1000);
-    await this.listTrash(this.currentLocation.marker.getLatLng().lat, this.currentLocation.marker.getLatLng().lng, this.filters.radius);
-  }
 
-  private async getLocation(): Promise<{lat: number, lng: number}> {
-    let data: any;
+    // initialize map service with data and add it to map
     try {
-      data = await this.geolocation.getCurrentPosition();
-    } catch (e) {
-      throw new Error('Unable to get current position.');
-    }
+      await this.mapService.initialize();
 
-    this.locationObserver = this.geolocation.watchPosition();
-    return {
-      lat: data.coords.latitude,
-      lng: data.coords.longitude
-    };
+      this.mapService.getTrashCollection().forEach(report => this.addMarker(report));
+      this.applyFilters(false);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  private async applyFilters(radiusChanged: boolean) {
-    console.log('Apply filters: ', this.filters);
+  private async applyFilters(filterChanged: boolean) {
+    console.log('Apply filters: ', this.mapService.getFilters());
 
     this.markerReports.forEach(markerReport => {
       if (markerReport.enabled) {
@@ -308,25 +282,23 @@ export class MapPage implements OnInit {
     });
 
     // retrieve trash reports again from backend
-    if (radiusChanged) {
-      const loading = await this.loadingCtrl.create({
-        message: 'App wird initialisiert...'
+    if (filterChanged) {
+      await this.mapService.append();
+
+      this.mapService.getTrashCollection().forEach(report => {
+        if (this.markerReports.map(mr => mr.report.id).indexOf(report.id) < 0) {
+          this.addMarker(report);
+        }
       });
-      await loading.present();
-
-      this.markerReports = [];
-
-      await this.listTrash(this.currentLocation.marker.getLatLng().lat, this.currentLocation.marker.getLatLng().lng, this.filters.radius);
-      await loading.dismiss();
     }
 
     this.markerReports.forEach(markerReport => {
       markerReport.enabled =
-        (this.filters.trash[0] && markerReport.report.hausmuell ||
-        this.filters.trash[1] && markerReport.report.gruenabfall ||
-        this.filters.trash[2] && markerReport.report.sperrmuell ||
-        this.filters.trash[3] && markerReport.report.sondermuell) &&
-        (!this.filters.username || markerReport.report.username === this.filters.username);
+        (this.mapService.getFilters().getTrash()[0] && markerReport.report.hausmuell ||
+        this.mapService.getFilters().getTrash()[1] && markerReport.report.gruenabfall ||
+        this.mapService.getFilters().getTrash()[2] && markerReport.report.sperrmuell ||
+        this.mapService.getFilters().getTrash()[3] && markerReport.report.sondermuell) &&
+        (!this.mapService.getFilters().getUsername() || markerReport.report.username === this.mapService.getFilters().getUsername());
 
       if (markerReport.enabled) {
         markerReport.marker.addTo(this.map).on('click', e => {

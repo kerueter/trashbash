@@ -1,7 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { ModalController } from '@ionic/angular';
-import { Storage } from '@ionic/storage';
-import { Filters } from 'src/app/models/Filters';
+import { Filter } from 'src/app/models/Filters';
 
 @Component({
   selector: 'app-filter',
@@ -9,40 +8,41 @@ import { Filters } from 'src/app/models/Filters';
   styleUrls: ['./filter.page.scss'],
 })
 export class FilterPage implements OnInit {
-  @Input() filters: Filters;
+  @Input() filter: Filter;
 
-  trashes: Array<{ val: string, isChecked: boolean, color: string}>;
+  filterValues: any;
 
-  constructor(private modalCtrl: ModalController, private storage: Storage) {
-    this.trashes = [
-      { val: 'Hausmüll', isChecked: false, color: 'primary' },
-      { val: 'Grünabfall', isChecked: false, color: 'success' },
-      { val: 'Sperrmüll', isChecked: false, color: 'warning'},
-      { val: 'Sondermüll', isChecked: false, color: 'danger' }
-    ];
+  constructor(private modalCtrl: ModalController) {
   }
 
   ngOnInit() {
-    this.trashes[0].isChecked = this.filters.trash[0];
-    this.trashes[1].isChecked = this.filters.trash[1];
-    this.trashes[2].isChecked = this.filters.trash[2];
-    this.trashes[3].isChecked = this.filters.trash[3];
+    this.filterValues = {
+      radius: this.filter.getRadius(),
+      trash: [
+        { val: 'Hausmüll', isChecked: this.filter.getTrash()[0], color: 'primary' },
+        { val: 'Grünabfall', isChecked: this.filter.getTrash()[1], color: 'success' },
+        { val: 'Sperrmüll', isChecked: this.filter.getTrash()[2], color: 'warning'},
+        { val: 'Sondermüll', isChecked: this.filter.getTrash()[3], color: 'danger' }
+      ],
+      username: this.filter.getUsername(),
+      startDate: this.filter.getStartDate(),
+      endDate: this.filter.getEndDate()
+    };
   }
 
   async closeModal() {
-    this.filters.trash[0] = this.trashes[0].isChecked;
-    this.filters.trash[1] = this.trashes[1].isChecked;
-    this.filters.trash[2] = this.trashes[2].isChecked;
-    this.filters.trash[3] = this.trashes[3].isChecked;
-
-    // store filters
-    await this.storage.set('filter-radius', this.filters.radius);
-    await this.storage.set('filter-trash', this.filters.trash);
-    await this.storage.set('filter-username', this.filters.username);
+    if (this.filterValues.startDate[this.filterValues.startDate.length - 1] !== 'Z') {
+      this.filterValues.startDate = this.filterValues.startDate.substring(0, this.filterValues.startDate.length - 6);
+      this.filterValues.startDate += 'Z';
+    }
+    if (this.filterValues.endDate[this.filterValues.endDate.length - 1] !== 'Z') {
+      this.filterValues.endDate = this.filterValues.endDate.substring(0, this.filterValues.endDate.length - 6);
+      this.filterValues.endDate += 'Z';
+    }
 
     // dismiss modal
     this.modalCtrl.dismiss({
-      filters: this.filters
+      filter: this.filterValues
     });
   }
 }
