@@ -7,6 +7,8 @@ const fileUpload = require('express-fileupload');
 const crypto = require('crypto');
 const { Client } = require('pg');
 
+const ENDPOINT_URL = 'http://igf-srv-lehre.igf.uni-osnabrueck.de:1338';
+
 const client = new Client({
   user: 'marcel',
   host: '127.0.0.1',
@@ -83,6 +85,8 @@ app.get('/trash', cors(), (req, res) => {
         { latitude: dbRow.latitude, longitude: dbRow.longitude}
       );
       if (distance < radiusKm) {
+        // const validRow = dbRow;
+        // validRow.photo = `${ENDPOINT_URL}/${dbRow.photo}`;
         validRows.push(dbRow);
       }
     });
@@ -94,7 +98,7 @@ app.get('/trash', cors(), (req, res) => {
 app.post('/trash', cors(), (req, res) => {
   const trashReport = req.body;
   const queryText = `INSERT INTO trash (time,username,latitude,longitude,hausmuell,gruenabfall,sperrmuell,sondermuell,photo) VALUES (to_timestamp($1), $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`;
-  const queryVals = [trashReport.time, trashReport.username, trashReport.latitude, trashReport.longitude, trashReport.hausMuell, trashReport.gruenAbfall, trashReport.sperrMuell, trashReport.sonderMuell, trashReport.photo]
+  const queryVals = [trashReport.time, trashReport.username, trashReport.latitude, trashReport.longitude, trashReport.hausMuell, trashReport.gruenAbfall, trashReport.sperrMuell, trashReport.sonderMuell, `${ENDPOINT_URL}/${trashReport.photo}`]
   client.query(queryText, queryVals, (err, dbRes) => {
     if(err) {
       console.log(err);
@@ -120,9 +124,11 @@ app.post('/trash/images/upload', (req, res) => {
     const filePath = `media/uploads/${hash}.jpg`
     req.files[fileKey].mv(filePath, (err) => {
       if (err) {
+        console.error(`Unable to generate file: ${JSON.stringify(err)}`);
         res.status(500).send({ message: `Error: ${err.message}` });
         return;
       }
+      console.log(`Created file at ${filePath}`);
       res.status(200).send({ Location: filePath });
     });
   });
