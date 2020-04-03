@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 
 import { ModalController, LoadingController, ActionSheetController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
@@ -16,16 +15,13 @@ import { ApiService } from 'src/app/service/api.service';
 export class TrashAddPage implements OnInit {
   username: string;
   trashes: Array<{ val: string, isChecked: boolean, color: string}>;
-  photo: { url: string, captured: boolean };
 
   constructor(
-    public domSanitizer: DomSanitizer,
     private modalCtrl: ModalController,
     private loadingCtrl: LoadingController,
     private actionSheetController: ActionSheetController,
     private geolocation: Geolocation,
     private camera: Camera,
-    private webview: WebView,
     private apiService: ApiService
   ) {
     this.username = '';
@@ -35,10 +31,6 @@ export class TrashAddPage implements OnInit {
       { val: 'Sperrmüll', isChecked: false, color: 'warning'},
       { val: 'Sondermüll', isChecked: false, color: 'danger' }
     ];
-    this.photo = {
-      url: 'https://www.creativefabrica.com/wp-content/uploads/2018/07/Camera-icon-by-harisprawoto-1-580x386.jpg',
-      captured: false
-    };
   }
 
   ngOnInit() {}
@@ -47,6 +39,36 @@ export class TrashAddPage implements OnInit {
     this.modalCtrl.dismiss({
       dismissed: true
     });
+  }
+
+  async requestPhoto() {
+    const actionSheet = await this.actionSheetController.create({
+      header: 'Möchtest du noch ein Foto erstellen?',
+      buttons: [
+      {
+        text: 'Ja',
+        icon: 'camera',
+        handler: () => {
+          this.selectImage();
+        }
+      },
+      {
+        text: 'Nein',
+        icon: 'camera',
+        handler: () => {
+          this.sendReport();
+        }
+      },
+      {
+        text: 'Abbrechen',
+        icon: 'close',
+        role: 'cancel',
+        handler: () => {
+          console.log('Sending report cancelled.');
+        }
+      }]
+    });
+    await actionSheet.present();
   }
 
   async selectImage() {
@@ -68,7 +90,7 @@ export class TrashAddPage implements OnInit {
         }
       },
       {
-        text: 'Cancel',
+        text: 'Abbrechen',
         icon: 'close',
         role: 'cancel',
         handler: () => {
@@ -79,7 +101,7 @@ export class TrashAddPage implements OnInit {
     await actionSheet.present();
   }
 
-  async getImage(sourceType: number) {
+  private async getImage(sourceType: number) {
     const options: CameraOptions = {
       quality: 100,
       sourceType,
@@ -89,23 +111,13 @@ export class TrashAddPage implements OnInit {
     };
     try {
       const imageData = await this.camera.getPicture(options);
-      this.photo.url = imageData;
-      this.photo.captured = true;
+      this.sendReport(imageData);
     } catch (e) {
       console.error(e);
     }
   }
 
-  pathForImage(img: string) {
-    if (img === null) {
-      return '';
-    } else {
-      const converted = this.webview.convertFileSrc(img);
-      return converted;
-    }
-  }
-
-  async sendReport() {
+  async sendReport(imageData?: string) {
     const loading = await this.loadingCtrl.create({
       message: 'Report wird übermittelt...'
     });
@@ -116,8 +128,8 @@ export class TrashAddPage implements OnInit {
 
       // first upload photo, if captured
       let photoLocation = null;
-      if (this.photo.captured) {
-        const photoRes = await this.apiService.postTrashImage(this.photo.url);
+      if (imageData) {
+        const photoRes = await this.apiService.postTrashImage(imageData);
         const parsedPhotoRes = JSON.parse(photoRes.response);
         console.log(parsedPhotoRes);
         photoLocation = parsedPhotoRes.Location;

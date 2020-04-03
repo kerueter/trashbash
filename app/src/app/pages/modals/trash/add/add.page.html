@@ -18,14 +18,7 @@
       <ion-checkbox slot="end" [(ngModel)]="entry.isChecked" [color]="entry.color || 'primary'"></ion-checkbox>
     </ion-item>
   </ion-list>
-  <ion-thumbnail class="modal-component modal-component-thumbnail">
-    <img [src]="photo.captured ? pathForImage(photo.url) : domSanitizer.bypassSecurityTrustUrl(photo.url)">
-  </ion-thumbnail>
-  <ion-button expand="block" class="modal-component" (click)="selectImage()">
-    <ion-icon name="camera" class="btn-icon"></ion-icon>
-    Foto knipsen
-  </ion-button>
-  <ion-button expand="block" class="modal-component" (click)="sendReport()">
+  <ion-button expand="block" style="margin: 0 20px 100px 20px;" (click)="requestPhoto()">
     <ion-icon name="trash" class="btn-icon"></ion-icon>
     Müll melden
   </ion-button>
