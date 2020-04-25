@@ -1,9 +1,9 @@
 import { Component, ViewChild, OnInit, ElementRef, Renderer2 } from '@angular/core';
 import { GestureController, ModalController, LoadingController } from '@ionic/angular';
 
-import { Map, tileLayer, Marker, icon, control } from 'leaflet';
+import { Map, tileLayer, Marker, icon } from 'leaflet';
 import * as L from 'leaflet';
-import 'leaflet.locatecontrol';
+import 'leaflet.markercluster';
 
 import { MapService } from 'src/app/service/map.service';
 
@@ -29,10 +29,12 @@ export class MapPage implements OnInit {
   isMapInBackground: boolean;
   locator: any;
   markerReports: Array<{ marker: Marker, report: Trash, enabled: boolean}>;
+  markerGroup: any;
   selectedPoi?: Trash;
 
   private currentLocation: { marker: Marker, follow: boolean };
   private controlUI;
+  private isMapServiceInitialized;
 
   constructor(
     private gestureCtrl: GestureController,
@@ -45,6 +47,7 @@ export class MapPage implements OnInit {
     this.selectedPoi = null;
     this.mapMenuHeight = 16;
     this.isMapInBackground = false;
+    this.isMapServiceInitialized = false;
   }
 
   async ngOnInit() {
@@ -84,13 +87,13 @@ export class MapPage implements OnInit {
       showBackdrop: true
     });
     this.isMapInBackground = true;
-    modal.onDidDismiss().then(data => {
+    modal.onDidDismiss().then(result => {
       const modalFilter = new Filter(
-        data.data.filter.radius,
-        data.data.filter.trash.map(m => m.isChecked),
-        data.data.filter.username,
-        data.data.filter.startDate,
-        data.data.filter.endDate
+        result.data.filter.radius,
+        result.data.filter.trash.map(m => m.isChecked),
+        result.data.filter.username,
+        result.data.filter.startDate,
+        result.data.filter.endDate
       );
       const filterChanged = !this.mapService.getFilters().equals(modalFilter);
 
@@ -109,12 +112,19 @@ export class MapPage implements OnInit {
   async openTrashAddModal() {
     const modal = await this.modalCtrl.create({
       component: TrashAddPage,
+      componentProps: {
+        userLocation: this.currentLocation.marker.getLatLng()
+      },
       cssClass: 'trash-modal',
       swipeToClose: false
     });
     this.isMapInBackground = true;
-    modal.onWillDismiss().then(() => {
+    modal.onDidDismiss().then(result => {
       this.isMapInBackground = false;
+      if (result.data.report) {
+        this.addMarker(result.data.report);
+        this.applyFilters(false);
+      }
     });
     return await modal.present();
   }
@@ -140,7 +150,7 @@ export class MapPage implements OnInit {
       iconSize: [40, 40],
     });
     this.markerReports.push({
-      marker: new Marker([report.latitude, report.longitude], { icon: trashLocationIcon }),
+      marker: new Marker([report.latitude, report.longitude], { icon: trashLocationIcon, zIndexOffset: 1 }),
       report,
       enabled: true
     });
@@ -188,32 +198,15 @@ export class MapPage implements OnInit {
    * Initialite leaflet map and locator
    */
   private async initializeMap() {
-    // get and subscribe user location
-    try {
-      const currentLoc = await this.mapService.getUserLocation();
-
-      const userLocationIcon = icon({
-        iconUrl: '../../assets/icon/location_my.svg',
-        iconSize: [40, 40],
-      });
-      this.currentLocation = {
-        marker: new Marker([currentLoc.lat, currentLoc.lng], { icon: userLocationIcon }),
-        follow: true
-      };
-
-      // setup subscriber for user location
-      this.mapService.getUserLocationObserver().subscribe(locationData => {
-        this.currentLocation.marker.setLatLng([
-          locationData.coords.latitude, locationData.coords.longitude
-        ]);
-
-        if (this.currentLocation.follow) {
-          this.map.panTo(this.currentLocation.marker.getLatLng());
-        }
-      });
-    } catch (e) {
-      console.error(e);
-    }
+    // set static user location and set marker for initialization
+    const userLocationIcon = icon({
+      iconUrl: '../../assets/icon/location_my.svg',
+      iconSize: [40, 40],
+    });
+    this.currentLocation = {
+      marker: new Marker([52, 8], { icon: userLocationIcon }),
+      follow: true
+    };
 
     // create leaflet tile layers
     const layerOsm = tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -275,6 +268,17 @@ export class MapPage implements OnInit {
         }
       }
     });
+
+    // initalize marker cluster group
+    this.markerGroup = (L as any).markerClusterGroup({
+      spiderfyOnMaxZoom: false,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: false,
+      singleMarkerMode: true,
+      maxClusterRadius: 40
+    });
+    this.map.addLayer(this.markerGroup);
+
     // invalidate map size after 1 second of initialization for rendering purposes
     setTimeout(() => {
       this.map.invalidateSize(true);
@@ -282,29 +286,46 @@ export class MapPage implements OnInit {
       this.map.setView(this.currentLocation.marker.getLatLng(), this.map.getMaxZoom());
     }, 1000);
 
-    // initialize map service with data and add it to map
-    try {
-      await this.mapService.initialize();
+    // setup subscriber for user location and initialize map service with data and add it to map
+    this.mapService.initialize();
+    this.mapService.getUserLocationObserver().subscribe(async locationData => {
+      this.currentLocation.marker.setLatLng([
+        locationData.coords.latitude, locationData.coords.longitude
+      ]);
 
-      this.mapService.getTrashCollection().forEach(report => this.addMarker(report));
-      this.applyFilters(false);
-    } catch (e) {
-      console.error(e);
-    }
+      if (this.currentLocation.follow) {
+        this.map.panTo(this.currentLocation.marker.getLatLng());
+      }
+
+      if (!this.isMapServiceInitialized) {
+        try {
+          await this.mapService.initializeTrashCollection(this.currentLocation.marker.getLatLng());
+
+          // add markers from trash collection
+          this.mapService.getTrashCollection().forEach(report => this.addMarker(report));
+          this.applyFilters(false);
+
+          this.isMapServiceInitialized = true;
+        } catch (msErr) {
+          console.error(msErr);
+        }
+      }
+    });
   }
 
   private async applyFilters(filterChanged: boolean) {
     console.log('Apply filters: ', this.mapService.getFilters());
-
-    this.markerReports.forEach(markerReport => {
-      if (markerReport.enabled) {
-        markerReport.marker.remove();
-      }
-    });
+    console.log(`Filter was ${filterChanged ? '' : 'not '}changed.`);
 
     // retrieve trash reports again from backend
     if (filterChanged) {
-      await this.mapService.append();
+      this.markerReports.forEach(markerReport => {
+        if (markerReport.enabled) {
+          markerReport.marker.remove();
+        }
+      });
+
+      await this.mapService.append(this.currentLocation.marker.getLatLng());
 
       this.mapService.getTrashCollection().forEach(report => {
         if (this.markerReports.map(mr => mr.report.id).indexOf(report.id) < 0) {
@@ -313,13 +334,19 @@ export class MapPage implements OnInit {
       });
     }
 
+    const currentLatLng = this.currentLocation.marker.getLatLng();
     this.markerReports.forEach(markerReport => {
+      console.log('Marker report: ' + JSON.stringify(markerReport.report));
       markerReport.enabled =
         (this.mapService.getFilters().getTrash()[0] && markerReport.report.hausmuell ||
         this.mapService.getFilters().getTrash()[1] && markerReport.report.gruenabfall ||
         this.mapService.getFilters().getTrash()[2] && markerReport.report.sperrmuell ||
         this.mapService.getFilters().getTrash()[3] && markerReport.report.sondermuell) &&
-        (!this.mapService.getFilters().getUsername() || markerReport.report.username === this.mapService.getFilters().getUsername());
+        (!this.mapService.getFilters().getUsername() || markerReport.report.username === this.mapService.getFilters().getUsername() &&
+        (this.getTrashDistance(
+          { latitude: currentLatLng.lat, longitude: currentLatLng.lng}, { latitude: markerReport.report.latitude, longitude: markerReport.report.latitude}
+        ) <= this.mapService.getFilters().getRadius())
+      );
 
       if (markerReport.enabled) {
         markerReport.marker.addTo(this.map).on('click', e => {
@@ -342,6 +369,21 @@ export class MapPage implements OnInit {
         });
       }
     });
+  }
+
+  /**
+   * Get the distance of the trash location to the radius center (in km)
+   *
+   * @param center Geo location of the radius center
+   * @param marker Geo location of the trash marker
+   */
+  private getTrashDistance(center, marker) {
+    const ky = 40000 / 360;
+    const kx = Math.cos(Math.PI * center.latitude / 180.0) * ky;
+    const dx = Math.abs(center.longitude - marker.longitude) * kx;
+    const dy = Math.abs(center.latitude - marker.latitude) * ky;
+
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
   /**
