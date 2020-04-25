@@ -237,19 +237,27 @@ export class MapPage implements OnInit {
     {
         options: { position: 'topleft' },
         onAdd: () => {
-            const controlDiv = L.DomUtil.create('div', 'leaflet-draw-toolbar leaflet-bar leaflet-control-location');
-            L.DomEvent
-              .addListener(controlDiv, 'click', L.DomEvent.stopPropagation)
-              .addListener(controlDiv, 'click', L.DomEvent.preventDefault)
-              .addListener(controlDiv, 'click', () => {
-                this.currentLocation.follow = !this.currentLocation.follow;
-                if (this.currentLocation.follow) {
-                  this.map.panTo(this.currentLocation.marker.getLatLng());
-                }
-              });
-            const controlUI = L.DomUtil.create('a', 'leaflet-control-location', controlDiv);
+          const controlDiv = L.DomUtil.create('div', 'leaflet-draw-toolbar leaflet-bar');
+          this.controlUI = L.DomUtil.create('a', 'leaflet-control-location-off', controlDiv);
+          L.DomEvent
+            .addListener(controlDiv, 'click', L.DomEvent.stopPropagation)
+            .addListener(controlDiv, 'click', L.DomEvent.preventDefault)
+            .addListener(controlDiv, 'click', () => {
+              this.currentLocation.follow = !this.currentLocation.follow;
 
-            return controlDiv;
+              // toggle location icon
+              const locationSuffixOld = this.currentLocation.follow ? 'off' : 'on';
+              const locationSuffixNew = this.currentLocation.follow ? 'on' : 'off';
+
+              L.DomUtil.removeClass(this.controlUI, `leaflet-control-location-${locationSuffixOld}`);
+              L.DomUtil.addClass(this.controlUI, `leaflet-control-location-${locationSuffixNew}`);
+
+              // pan to current location if "following" was triggered
+              if (this.currentLocation.follow) {
+                this.map.panTo(this.currentLocation.marker.getLatLng());
+              }
+            });
+          return controlDiv;
         }
     });
     const locationControl = new (L.Control as any).Location();
