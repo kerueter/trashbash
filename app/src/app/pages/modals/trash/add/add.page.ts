@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 
 import { ModalController, LoadingController, ActionSheetController, ToastController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 
+import { LatLng } from 'leaflet';
+
 import { ApiService } from 'src/app/service/api.service';
+import { MapService } from 'src/app/service/map.service';
 
 @Component({
   selector: 'app-trash-add',
@@ -12,6 +15,8 @@ import { ApiService } from 'src/app/service/api.service';
   styleUrls: ['./add.page.scss'],
 })
 export class TrashAddPage implements OnInit {
+  @Input() userLocation: LatLng;
+
   username: string;
   trashes: Array<{ val: string, isChecked: boolean, color: string}>;
 
@@ -20,8 +25,8 @@ export class TrashAddPage implements OnInit {
     private loadingCtrl: LoadingController,
     private actionSheetController: ActionSheetController,
     private toastCtrl: ToastController,
-    private geolocation: Geolocation,
     private camera: Camera,
+    private mapService: MapService,
     private apiService: ApiService
   ) {
     this.username = '';
@@ -34,12 +39,6 @@ export class TrashAddPage implements OnInit {
   }
 
   ngOnInit() {}
-
-  closeModal() {
-    this.modalCtrl.dismiss({
-      dismissed: true
-    });
-  }
 
   async requestPhoto() {
     const actionSheet = await this.actionSheetController.create({
@@ -125,11 +124,9 @@ export class TrashAddPage implements OnInit {
 
     let sendStatus = true;
     try {
-      const location = await this.getLocation();
-
       // first upload photo, if captured
       let photoLocation = null;
-      if (imageData) {
+      if (imageData && imageData.length > 0) {
         const photoRes = await this.apiService.postTrashImage(imageData);
         const parsedPhotoRes = JSON.parse(photoRes.response);
         console.log(parsedPhotoRes);
@@ -139,17 +136,19 @@ export class TrashAddPage implements OnInit {
       const resp = await this.apiService.postTrash({
         time: new Date().getTime() / 1000,
         username: this.username,
-        latitude: location.lat,
-        longitude: location.lng,
+        latitude: this.userLocation.lat,
+        longitude: this.userLocation.lng,
         hausMuell: this.trashes[0].isChecked,
         gruenAbfall: this.trashes[1].isChecked,
         sperrMuell: this.trashes[2].isChecked,
         sonderMuell: this.trashes[3].isChecked,
         photo: photoLocation ? photoLocation : ''
       });
-      console.log(resp);
+      this.mapService.addItemToCollection(resp);
 
-      this.closeModal();
+      this.modalCtrl.dismiss({
+        report: resp
+      });
     } catch (e) {
       console.error(e);
       sendStatus = false;
@@ -163,18 +162,5 @@ export class TrashAddPage implements OnInit {
       });
       toast.present();
     }
-  }
-
-  private async getLocation(): Promise<{lat: number, lng: number}> {
-    let data: any;
-    try {
-      data = await this.geolocation.getCurrentPosition();
-    } catch (e) {
-      throw new Error('Unable to get current position.');
-    }
-    return {
-      lat: data.coords.latitude,
-      lng: data.coords.longitude
-    };
   }
 }
