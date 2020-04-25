@@ -32,6 +32,7 @@ export class MapPage implements OnInit {
   selectedPoi?: Trash;
 
   private currentLocation: { marker: Marker, follow: boolean };
+  private controlUI;
 
   constructor(
     private gestureCtrl: GestureController,
