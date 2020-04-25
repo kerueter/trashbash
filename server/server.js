@@ -97,8 +97,9 @@ app.get('/trash', cors(), (req, res) => {
 
 app.post('/trash', cors(), (req, res) => {
   const trashReport = req.body;
+  const trashImg = trashReport.photo && trashReport.photo.length > 0 ? `${ENDPOINT_URL}/${trashReport.photo}` : '';
   const queryText = `INSERT INTO trash (time,username,latitude,longitude,hausmuell,gruenabfall,sperrmuell,sondermuell,photo) VALUES (to_timestamp($1), $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`;
-  const queryVals = [trashReport.time, trashReport.username, trashReport.latitude, trashReport.longitude, trashReport.hausMuell, trashReport.gruenAbfall, trashReport.sperrMuell, trashReport.sonderMuell, `${ENDPOINT_URL}/${trashReport.photo}`]
+  const queryVals = [trashReport.time, trashReport.username, trashReport.latitude, trashReport.longitude, trashReport.hausMuell, trashReport.gruenAbfall, trashReport.sperrMuell, trashReport.sonderMuell, trashImg]
   client.query(queryText, queryVals, (err, dbRes) => {
     if(err) {
       console.log(err);
