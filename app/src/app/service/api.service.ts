@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { FileTransfer, FileTransferObject, FileUploadOptions } from '@ionic-native/file-transfer/ngx';
 
-import { FeatureCollection, Point } from 'geojson';
+import { FeatureCollection, Feature, Point } from 'geojson';
 import { Trash } from '../models/Trash';
 import { Filter } from '../models/Filters';
 
@@ -44,7 +44,8 @@ export class ApiService {
           gruenabfall: feature.properties.gruenabfall,
           sperrmuell: feature.properties.sperrmuell,
           sondermuell: feature.properties.sondermuell,
-          photo: feature.properties.photo || null
+          photo: feature.properties.photo && feature.properties.photo.length > 0 ?
+            feature.properties.photo : null
         });
       });
 
@@ -56,13 +57,25 @@ export class ApiService {
     }
   }
 
-  public async postTrash(report: any): Promise<any> {
+  public async postTrash(report: any): Promise<Trash> {
     try {
-      const data = await this.httpClient.post(`${this.endpointUrl}/trash`, report, {
+      const feature = await this.httpClient.post<Feature>(`${this.endpointUrl}/trash`, report, {
         headers: { 'Content-Type': 'application/json' }
       }).toPromise();
 
-      return data;
+      return {
+        id: feature.properties.id,
+        time: feature.properties.time,
+        username: feature.properties.username,
+        latitude: (feature.geometry as Point).coordinates[1],
+        longitude: (feature.geometry as Point).coordinates[0],
+        hausmuell: feature.properties.hausmuell,
+        gruenabfall: feature.properties.gruenabfall,
+        sperrmuell: feature.properties.sperrmuell,
+        sondermuell: feature.properties.sondermuell,
+        photo: feature.properties.photo && feature.properties.photo.length > 0 ?
+          feature.properties.photo : null
+      };
     } catch (e) {
       throw e;
     }
