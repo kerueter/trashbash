@@ -1,13 +1,13 @@
 import { Component, OnInit, Input } from '@angular/core';
 
 import { ModalController, LoadingController, ActionSheetController, ToastController } from '@ionic/angular';
-import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 
 import { LatLng } from 'leaflet';
 
 import { ApiService } from 'src/app/service/api.service';
 import { MapService } from 'src/app/service/map.service';
+import { Trash } from 'src/app/models/Trash';
 
 @Component({
   selector: 'app-trash-add',
@@ -100,6 +100,12 @@ export class TrashAddPage implements OnInit {
     await actionSheet.present();
   }
 
+  closeModal(resp?: Trash) {
+    this.modalCtrl.dismiss({
+      report: resp
+    });
+  }
+
   private async getImage(sourceType: number) {
     const options: CameraOptions = {
       quality: 100,
@@ -145,10 +151,7 @@ export class TrashAddPage implements OnInit {
         photo: photoLocation ? photoLocation : ''
       });
       this.mapService.addItemToCollection(resp);
-
-      this.modalCtrl.dismiss({
-        report: resp
-      });
+      this.closeModal(resp);
     } catch (e) {
       console.error(e);
       sendStatus = false;
