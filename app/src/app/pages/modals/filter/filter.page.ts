@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { ModalController } from '@ionic/angular';
+import { ModalController, ToastController } from '@ionic/angular';
 import { Filter } from 'src/app/models/Filters';
 
 @Component({
@@ -12,7 +12,7 @@ export class FilterPage implements OnInit {
 
   filterValues: any;
 
-  constructor(private modalCtrl: ModalController) {
+  constructor(private modalCtrl: ModalController, private toastCtrl: ToastController) {
   }
 
   ngOnInit() {
@@ -31,6 +31,7 @@ export class FilterPage implements OnInit {
   }
 
   async closeModal() {
+    // format start and end date to correct timestamp
     if (this.filterValues.startDate[this.filterValues.startDate.length - 1] !== 'Z') {
       this.filterValues.startDate = this.filterValues.startDate.substring(0, this.filterValues.startDate.length - 6);
       this.filterValues.startDate += 'Z';
@@ -39,6 +40,13 @@ export class FilterPage implements OnInit {
       this.filterValues.endDate = this.filterValues.endDate.substring(0, this.filterValues.endDate.length - 6);
       this.filterValues.endDate += 'Z';
     }
+
+    // create toast
+    const toast = await this.toastCtrl.create({
+      message: 'Die Filter wurden angewendet.',
+      duration: 2000
+    });
+    toast.present();
 
     // dismiss modal
     this.modalCtrl.dismiss({

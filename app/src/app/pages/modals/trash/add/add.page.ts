@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 
-import { ModalController, LoadingController, ActionSheetController } from '@ionic/angular';
+import { ModalController, LoadingController, ActionSheetController, ToastController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
-import { WebView } from '@ionic-native/ionic-webview/ngx';
 
 import { ApiService } from 'src/app/service/api.service';
 
@@ -20,6 +19,7 @@ export class TrashAddPage implements OnInit {
     private modalCtrl: ModalController,
     private loadingCtrl: LoadingController,
     private actionSheetController: ActionSheetController,
+    private toastCtrl: ToastController,
     private geolocation: Geolocation,
     private camera: Camera,
     private apiService: ApiService
@@ -123,6 +123,7 @@ export class TrashAddPage implements OnInit {
     });
     await loading.present();
 
+    let sendStatus = true;
     try {
       const location = await this.getLocation();
 
@@ -147,11 +148,20 @@ export class TrashAddPage implements OnInit {
         photo: photoLocation ? photoLocation : ''
       });
       console.log(resp);
+
+      this.closeModal();
     } catch (e) {
       console.error(e);
+      sendStatus = false;
     } finally {
       await loading.dismiss();
-      this.closeModal();
+
+      // create toast after report has been sent
+      const toast = await this.toastCtrl.create({
+        message: sendStatus ? 'Danke für deinen Report! <3' : 'Oh snap! Dein Report konnte nicht übermittelt werden.',
+        duration: 2000
+      });
+      toast.present();
     }
   }
 
