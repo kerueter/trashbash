@@ -41,8 +41,17 @@ export class MapService {
    * @param latitude Latitude of the user position
    * @param longitude Longitude of the user position
    */
-  async initialize(currentLocation: LatLng): Promise<void> {
-    console.log('Initialize map...');
+  initialize(): void {
+    console.log('Initialize map service...');
+    this.userLocationObserver = this.geolocation.watchPosition();
+  }
+
+  /**
+   * 
+   * @param currentLocation 
+   */
+  async initializeTrashCollection(currentLocation: LatLng): Promise<void> {
+    console.log('Initialize trash collection...');
     try {
       this.userLocationObserver = this.geolocation.watchPosition();
 
