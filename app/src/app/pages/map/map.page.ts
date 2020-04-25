@@ -336,38 +336,47 @@ export class MapPage implements OnInit {
 
     const currentLatLng = this.currentLocation.marker.getLatLng();
     this.markerReports.forEach(markerReport => {
-      console.log('Marker report: ' + JSON.stringify(markerReport.report));
-      markerReport.enabled =
-        (this.mapService.getFilters().getTrash()[0] && markerReport.report.hausmuell ||
+      // get filter status for reports
+      const filterTrash = (
+        this.mapService.getFilters().getTrash()[0] && markerReport.report.hausmuell ||
         this.mapService.getFilters().getTrash()[1] && markerReport.report.gruenabfall ||
         this.mapService.getFilters().getTrash()[2] && markerReport.report.sperrmuell ||
-        this.mapService.getFilters().getTrash()[3] && markerReport.report.sondermuell) &&
-        (!this.mapService.getFilters().getUsername() || markerReport.report.username === this.mapService.getFilters().getUsername() &&
-        (this.getTrashDistance(
-          { latitude: currentLatLng.lat, longitude: currentLatLng.lng}, { latitude: markerReport.report.latitude, longitude: markerReport.report.latitude}
-        ) <= this.mapService.getFilters().getRadius())
+        this.mapService.getFilters().getTrash()[3] && markerReport.report.sondermuell
       );
+      const filterUsername = (!this.mapService.getFilters().getUsername()) || (markerReport.report.username === this.mapService.getFilters().getUsername());
+      const filterDate =
+        new Date(this.mapService.getFilters().getStartDate()).getTime() < new Date(markerReport.report.time).getTime() &&
+        new Date(this.mapService.getFilters().getEndDate()).getTime() > new Date(markerReport.report.time).getTime();
 
+      const filterRadius = (this.getTrashDistance(
+        { latitude: currentLatLng.lat, longitude: currentLatLng.lng}, { latitude: markerReport.report.latitude, longitude: markerReport.report.longitude}
+      ) <= this.mapService.getFilters().getRadius());
+
+      markerReport.enabled = filterTrash && filterUsername && filterDate && filterRadius;
       if (markerReport.enabled) {
-        markerReport.marker.addTo(this.map).on('click', e => {
-          this.selectedPoi = markerReport.report;
-
-          this.currentLocation.follow = false;
-
-          this.map.panTo([
-            markerReport.report.latitude,
-            markerReport.report.longitude
-          ]);
-
-          this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
-          this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
-
-          // store map menu height after rendering
-          setTimeout(() => {
-            this.mapMenuHeight = this.mapMenu.nativeElement.offsetHeight;
-          }, 100);
-        });
+        this.addMarkerToMap(markerReport);
       }
+    });
+  }
+
+  private addMarkerToMap(markerReport: any) {
+    markerReport.marker.addTo(this.map).on('click', e => {
+      this.selectedPoi = markerReport.report;
+
+      this.currentLocation.follow = false;
+
+      this.map.panTo([
+        markerReport.report.latitude,
+        markerReport.report.longitude
+      ]);
+
+      this.renderer.addClass(this.mapMenu.nativeElement, 'map-menu-active');
+      this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
+
+      // store map menu height after rendering
+      setTimeout(() => {
+        this.mapMenuHeight = this.mapMenu.nativeElement.offsetHeight;
+      }, 100);
     });
   }
 
