@@ -134,8 +134,12 @@ export class MapPage implements OnInit {
    * @param report Trash report object
    */
   private addMarker(report: Trash) {
+    const trashLocationIcon = icon({
+      iconUrl: '../../assets/icon/marker-trash.svg',
+      iconSize: [40, 40],
+    });
     this.markerReports.push({
-      marker: new Marker([report.latitude, report.longitude]),
+      marker: new Marker([report.latitude, report.longitude], { icon: trashLocationIcon }),
       report,
       enabled: true
     });
