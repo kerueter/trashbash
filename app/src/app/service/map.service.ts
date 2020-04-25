@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Geolocation, Geoposition } from '@ionic-native/geolocation/ngx';
+import { Observable } from 'rxjs';
+import { LatLng } from 'leaflet';
 
 import { ApiService } from './api.service';
 
 import { Trash } from '../models/Trash';
 import { Filter } from '../models/Filters';
-import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -40,9 +41,11 @@ export class MapService {
    * @param latitude Latitude of the user position
    * @param longitude Longitude of the user position
    */
-  async initialize(): Promise<void> {
+  async initialize(currentLocation: LatLng): Promise<void> {
+    console.log('Initialize map...');
     try {
-      const currentLocation = await this.getUserLocation();
+      this.userLocationObserver = this.geolocation.watchPosition();
+
       this.trashCollection = await this.apiService.listTrash(currentLocation.lat, currentLocation.lng, this.filters);
     } catch (e) {
       throw e;
@@ -55,9 +58,9 @@ export class MapService {
    * @param latitude Latitude of the user position
    * @param longitude Longitude of the user position
    */
-  async append(): Promise<void> {
+  async append(currentLocation: LatLng): Promise<void> {
+    console.log('Append trash reports...');
     try {
-      const currentLocation = await this.getUserLocation();
       const trashCollectionNew = await this.apiService.listTrash(currentLocation.lat, currentLocation.lng, this.filters);
 
       // only append new items to trash collection
@@ -92,24 +95,6 @@ export class MapService {
    */
   setFilters(filters: Filter) {
     this.filters = filters;
-  }
-
-  /**
-   * Getter for retrieving current user location
-   */
-  async getUserLocation(): Promise<{lat: number, lng: number}> {
-    let data: any;
-    try {
-      data = await this.geolocation.getCurrentPosition();
-    } catch (e) {
-      throw new Error('Unable to get current position.');
-    }
-
-    this.userLocationObserver = this.geolocation.watchPosition();
-    return {
-      lat: data.coords.latitude,
-      lng: data.coords.longitude
-    };
   }
 
   /**
