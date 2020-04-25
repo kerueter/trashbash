@@ -43,5 +43,10 @@ ion-tab-bar {
 }
 
 .leaflet-control-location {
-  background-image: url('/assets/icon/location_on.svg');
+  &-on {
+    background-image: url('/assets/icon/location_on.svg');
+  }
+  &-off {
+    background-image: url('/assets/icon/location_off.svg');
+  }
 }
