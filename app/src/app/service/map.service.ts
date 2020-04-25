@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Geolocation, Geoposition } from '@ionic-native/geolocation/ngx';
 import { Observable } from 'rxjs';
-import { LatLng } from 'leaflet';
+import { LatLng, Point } from 'leaflet';
 
 import { ApiService } from './api.service';
 
@@ -72,6 +72,10 @@ export class MapService {
     } catch (e) {
       console.error(e);
     }
+  }
+
+  addItemToCollection(item: Trash) {
+    this.trashCollection.push(item);
   }
 
   /**
