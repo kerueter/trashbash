@@ -79,14 +79,14 @@ export class MapPage implements OnInit {
         filter: this.mapService.getFilters()
       },
       cssClass: 'trash-modal',
-      swipeToClose: true,
+      swipeToClose: false,
       showBackdrop: true
     });
     this.isMapInBackground = true;
-    modal.onWillDismiss().then(data => {
+    modal.onDidDismiss().then(data => {
       const modalFilter = new Filter(
         data.data.filter.radius,
-        data.data.filter.trash,
+        data.data.filter.trash.map(m => m.isChecked),
         data.data.filter.username,
         data.data.filter.startDate,
         data.data.filter.endDate
@@ -109,7 +109,7 @@ export class MapPage implements OnInit {
     const modal = await this.modalCtrl.create({
       component: TrashAddPage,
       cssClass: 'trash-modal',
-      swipeToClose: true
+      swipeToClose: false
     });
     this.isMapInBackground = true;
     modal.onWillDismiss().then(() => {
