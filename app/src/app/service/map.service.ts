@@ -25,6 +25,12 @@ export class MapService {
     const dateLastWeek = new Date(dateCurrent.getTime());
     dateLastWeek.setDate(dateCurrent.getDate() - 14);
 
+    dateLastWeek.setHours(0, 0, 0, 0);
+    dateCurrent.setHours(0, 0, 0, 0);
+    dateCurrent.setDate(dateCurrent.getDate() + 1);
+    dateCurrent.setSeconds(dateCurrent.getSeconds() - 1);
+
+
     // set default values for filters
     this.filters = new Filter(
       100,
@@ -36,7 +42,7 @@ export class MapService {
   }
 
   /**
-   * Get all trash reports from API and add to trash collection
+   * Initialize user location observer
    *
    * @param latitude Latitude of the user position
    * @param longitude Longitude of the user position
@@ -47,8 +53,9 @@ export class MapService {
   }
 
   /**
+   * Get all trash reports from API and add to trash collection
    * 
-   * @param currentLocation 
+   * @param currentLocation Current user location
    */
   async initializeTrashCollection(currentLocation: LatLng): Promise<void> {
     console.log('Initialize trash collection...');
