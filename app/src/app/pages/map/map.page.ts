@@ -235,10 +235,7 @@ export class MapPage implements OnInit {
     L.control.layers(layerMap).addTo(this.map);
     (L.Control as any).Location = L.Control.extend(
     {
-        options:
-        {
-            position: 'topleft',
-        },
+        options: { position: 'topleft' },
         onAdd: () => {
             const controlDiv = L.DomUtil.create('div', 'leaflet-draw-toolbar leaflet-bar leaflet-control-location');
             L.DomEvent
