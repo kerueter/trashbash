@@ -263,6 +263,17 @@ export class MapPage implements OnInit {
     const locationControl = new (L.Control as any).Location();
     this.map.addControl(locationControl);
 
+    // always disable following user location, if map was dragged
+    this.map.on('mousedown', e => {
+      if (this.currentLocation.follow) {
+        this.currentLocation.follow = false;
+
+        if (L.DomUtil.hasClass(this.controlUI, 'leaflet-control-location-on')) {
+          L.DomUtil.removeClass(this.controlUI, `leaflet-control-location-on`);
+          L.DomUtil.addClass(this.controlUI, `leaflet-control-location-off`);
+        }
+      }
+    });
     // invalidate map size after 1 second of initialization for rendering purposes
     setTimeout(() => {
       this.map.invalidateSize(true);
