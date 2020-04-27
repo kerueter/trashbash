@@ -146,7 +146,7 @@ export class MapPage implements OnInit {
    */
   private addMarker(report: Trash) {
     const trashLocationIcon = icon({
-      iconUrl: '../../assets/icon/marker-trash.svg',
+      iconUrl: this.getTrashMarkerIcon(report),
       iconSize: [40, 40],
     });
     this.markerReports.push({
@@ -154,6 +154,30 @@ export class MapPage implements OnInit {
       report,
       enabled: true
     });
+  }
+
+  /**
+   * Get marker icon based on trash in report
+   *
+   * @param report Trash report
+   */
+  private getTrashMarkerIcon(report: Trash): string {
+    let iconSuffix = '';
+
+    if (report.hausmuell) {
+      iconSuffix += '-1';
+    }
+    if (report.gruenabfall) {
+      iconSuffix += '-2';
+    }
+    if (report.sperrmuell) {
+      iconSuffix += '-3';
+    }
+    if (report.sondermuell) {
+      iconSuffix += '-4';
+    }
+
+    return `../../assets/icon/location-trash${iconSuffix}.svg`;
   }
 
   /**
