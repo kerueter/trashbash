@@ -61,6 +61,8 @@
 
 \usepackage{blindtext}
 
+\usepackage{hyperref}
+
 
 % Sehr gute Möglichkeiten um Grafiken direkt in LaTeX zu erzeugen bietet Tikz (http://mirror.ctan.org/graphics/pgf/base/doc/generic/pgf/pgfmanual.pdf und http://www.statistiker-wg.de/pgf/tutorials.htm)
 %\usepackage{tikz}		% 
@@ -185,7 +187,7 @@
 			\noindent\hrulefill
 			\\[3.5cm]
 			BERICHT \\[1cm]
-			zum Semainr \\[1cm]
+			zum Seminar \\[1cm]
 			\textbf{Standortbasierte Dienste} \\[1.5cm]    % Seminartitel eintragen 
 			im Wintersemester 2019/2020 \\[1.5cm]   % Semester / Datum eintragen
 			Thema: \\[0.5cm]
@@ -230,13 +232,54 @@
 	\blindtext
 
 	\section{Komponenten}
-	\blindtext
+	Die folgenden Komponenten wurden zur Erstellung der App "TrashBash" genutzt:
+	\begin {itemize}
+	\item \textbf{Server/Backend}
+		\begin {itemize}
+			\item \textbf{Express.js:} Stellt die benötigten HTTP-Server Funktionen bereit, für die Schnittstelle zwischen App und Datenbank. Zudem wird, um die Bilder hochzuladen, die \textit{fileupload}-Funktion genutzt.
+			\item \textbf{Crypto von Node.js:} Wird benötigt, um den md5-Hashwert für die Bilder zu berechnen.
+			\item \textbf{Postgres:} Stellt die Verbindung vom Server-Skript zur Datenbank her.
+		\end {itemize}
+	\item \textbf{App}
+		\begin {itemize}
+		\item \textbf{Angular:} Dient als Hauptkomponente zur Strukturierung der App. Vereinfacht beispielsweise den Umgang mit Webinhalten durch Services.
+		\item \textbf{Leaflet:} Die Müllmeldekarte wird durch Leaflet eingestellt. Mit Leaflet lassen sich Karten in Webseiten und Apps einbinden und zudem mit Markern und Popups erweitern.
+		\item \textbf{Ionic:} Fügt einige Userinterface-Komponenten zu Angular hinzu, die sich durch gutes Design in Android und iOS Apps auszeichnen.
+		\end {itemize}
+	\end {itemize}
 
 	\subsection{Frontend / App}
-	\blindtext
+	\subsubsection{Leaflet Karte}
+	\begin {itemize}
+		\item Die Initialisierung der Leaflet Karte wird von der initializeMap-Methode der Angular Map Page durchgeführt. Als Kartendatenprovider kann zwischen \href{https://www.openstreetmap.org}{Open Street Maps} und \href{http://voyager.basemaps.cartocdn.com}				{Voyager} entschieden werden. Die Auswahl kann über die \textit{leaflet-control-layers-expanded} Schaltfläche in der oberen linken Ecke getroffen werden.
+		\item Ebenfalls wird in der \textit{initializeMap}-Methode der Standort des App-Nutzers ermittelt. Dazu benutzen wir die Klasse Geolocation aus dem Ionic Native Framework. Zunächst wird die momentane Position in Form von Längen- und Breitengrad durch 					\textit{getCurrentPosition} abgerufen. Da diese Methode asynchron abläuft, muss die komplette \textit{initializeMap}-Methode als \textit{async} definiert werden und mit dem \textit{await} Statement vor dem Aufruf auf die Erfüllung der zurückgegebenen 				\textit{Promise} gewartet werden. Die erhaltenen Daten werden daraufhin einem Standortmarker übergeben.
+			Damit die Position des Users stets aktuell bleibt, setzen wir den \textit{UserLocationObserver} aus Ionic Native ein und lassen den Standortmarker auf etwaige Standortveränderungen horchen. So wird der Marker bei einem Standortwechsel verschoben.
+		\item Die gemeldeten illegalen Müllablagerungen werden mit einem Leaflet Marker an den jeweiligen Koordinaten dargestellt. Im Abschnitt \hyperref[sec:Filter] {Filter} wird genauer auf das Abrufen der Daten eingegangen.
 
+	\end {itemize}
+	\subsubsection{Meldung von Müllablagerungen}
+	\begin {itemize}
+		\item Die Meldung einer illegalen Müllablagerung wird über den grünen Knopf mit dem Plus in der unteren rechten Ecke gestartet. Daraufhin öffnet sich ein \textit{Angular Modal} Dialog-Fenster, in welchem die Daten zur Müllablagerung vom Nutzer eingetragen 					werden können. Es wird ein \textit{Modal} benutzt, da man es über die Leaflet-Karte legen kann und somit diese im Hintergrund, bei der Eingabe der Mülldetails, visualisiert bleibt. Zudem sorgt die \textit{Ionic}-Funktion \textit{backdrop} für den grauen 					Schleier über der Karte im Hintergrund.
+		\item Die Eingabe des Nutzernamens wird über ein \textit{Ionic input} realisiert. Dieser wird in der HTML-Template-Datei zum Müllmelde-Modal \textit{„add.page.html“} definiert. In demselben Template wird auch eine \textit{Ionic-list} angelegt, bestehend aus jeweils 				einem \textit{label} und einer \textit{checkbox}. Die Liste wird mit den vier verschiedenen Kategorien von Müllablagerungen bestückt. Im \textit{label} wird der Name angezeigt und die \textit{checkbox} markiert ob der jeweilige Müll-Typ vorhanden ist.
+			Damit auch Bilder der Müllablagerung mitgesendet werden können benötigen wir aus\textit{ Ionic Native} die \textit{Camera}-Klasse. Diese beruht auf dem \textit{Cordova-Camera-Plugin} um an die Hardware Funktionen der Smartphone-Kamera und die 				gespeicherten Fotos zu gelangen. Da das Hinzufügen von Bildern optional ist, wird vor dem Absenden der Meldung dem Nutzer ein \textit{Ionic action-sheet} präsentiert. Dieses \textit{Ionic} Gestaltungselement ist dazu gedacht eine Auswahl von Optionen zu 				präsentieren. Es gibt zwei \textit{action-sheets} im Müllmeldeprozess. Im ersten kann ausgewählt werden, ob ein Bild angefügt werden soll. Beantwortet man dies mit „Nein“ wird die Meldung direkt an die Datenbank gesendet. Wird „Ja“ gewählt kommt ein 				zweites \textit{action-sheet} in welchem man sich entscheiden kann, ob man ein neues Bild mit der Kamera aufnehmen möchte oder eins aus der Fotogalerie hochladen möchte. Die beiden Funktionen werden plattformunabhängig von \textit{Cordova} über 				\textit{Ionic} bereitgestellt. Die von uns erstellte Funktion \textit{getImage(sourceType: number)} speichert das Bild aus der jeweiligen Quelle im JPEG-Format ab und löst \textit{sendReport} aus. Die Meldung ist dann abgeschlossen und man gelangt wieder 				zurück auf die Karte.
+
+	\end{itemize}
+
+	\subsubsection{Filter}
+	\begin {itemize}
+		\item Über den \textit{Ionic Button} \textbf{Filter} mittig am unteren Rand platziert, lässt sich einstellen welche Meldungen von Müllablagerungen auf der Karte angezeigt werden sollen. Klickt man auf diesen Button öffnet sich, wie auch bei der Müllmeldung ein 					\textit{Ionic Modal}. In diesem lässt sich nach den folgenden Paramatern sortieren: Username, Zeitraum, Müllart und einem Umgebungsradius. Um einen Filter darzustellen, haben wir eine \textit{Typescript}-Klasse Filter angelegt, die die genannten Parameter 				abspeichert und mit getter- und setter-Methoden manipulierbar macht.
+			Möchte der Nutzer beispielsweise nur Meldungen von der Nutzerin “Martha Musterfrau” angezeigt bekommen, die in einem Umkreis von 50 km um seinen aktuellen Standort gemeldet wurden, müssen zwei Einstellungen im Filter \textit{Modal} getroffen werden. 				Erstens wird der Nutzername in den \textit{Ionic} Input „Username“ eingetippt und zweitens der \textit{Ionic} Slider auf den Wert 50, für den Radius in Kilometern, eingestellt.
+			Da der Filter durch den \textit{Angular-Service map.service} bereitgestellt wird, können die Änderungen über die \textit{setFilters()}-Funktion direkt abgespeichert werden. Dann wird die \textit{applyFilters()}-Funktion mit \textit{true} als Übergabewert 				aufgerufen und der im \textit{mapService} hinterlegte Filter wird durch Serverabfragen angewendet, sodass nur noch die gewünschten Marker auf der Leaflet-Karte angezeigt werden.
+	\end {itemize}
+	
 	\subsection{Backend}
-	\blindtext
+	\begin {itemize}
+		\item In diesem Abschnitt wird erklärt wie der Server als Schnittstelle zwischen App und Datenbank fungiert. Die zwei Hauptfunktionen des Servers sind unter dem Endpoint \textit{/trash} mit HTTP-Get und POST erreichbar.
+		\item Mit der GET-Methode werden die Anfragen der App nach Müllablagerungen bedient. Dort wird zuerst überprüft, ob die drei von der App zu sendeten Werte Latitude, Longitude und Radius wirklich gesendet wurden. Ist dies nicht der Fall wird der HTTP-Fehler 				400 (Bad Request) zurückgegeben. Danach wird geschaut, ob ein Start- und Enddatum vorhanden ist. Wenn keine Daten in der Filterfunktion der App angegeben wurden, werden die letzten 14 Tage als Anzeigezeitraum gewählt.
+		\item Die zur Datenbankabfrage notwendigen Daten sind dann bereit, sodass folgendes Statement an die Datenbank geschickt werden kann:\textit{ “SELECT * FROM trash WHERE time BETWEEN startDate AND endDate ORDER BY id ASC”}. So bekommt man alle 				Müllablagerungsmeldungen zwischen Start- und Enddatum nach Meldezeitpunkt sortiert, da die \textit {id} als Primärschlüssel bei jeder Meldung hochgezählt wird.
+			Die so erhaltenen Zeilen aus der Datenbank müssen noch auf den im Filter gewählten Radius ausgedünnt werden. Für die Berechnung wurde die Funktion \textit{getTrashDistance(center, marker)} geschrieben, um die Distanz auf der Erdkugel zu berechnen. 				Dabei enthält \textit{center} die Koordinaten des Nutzers, und \textit{marker} die der Müllmeldung. Die Koordinaten, der in dem Radius liegenden Meldungen, werden als Punkte im GeoJSON Format zurückgegeben. So können die Marker in der App an den 				passenden Punkten angezeigt werden.
+		\item Die dritte Funktion des Servers ist es die vom Nutzer hochzuladenden Bilder anzunehmen. Zuerst wird überprüft, ob im empfangenen Body sich ein \textit{files}-Objekt befindet. Ist dies nicht der Fall wird der Statuscode 400 für Bad Request 							zurückgegeben. Das Foto wird mit dem eigenen md5-Hashwert als Dateinamen abgespeichert und an die App wird zusammen, mit Statuscode 200 der Dateipfad auf dem Server zurückgeschickt. Ansonsten kommt HTTP-Code 500 Internal Server Error, falls die 				Datei nicht abgespeichert werden kann.
+	\end {itemize}
 	                     
 	\printbibliography
 \end{document}
