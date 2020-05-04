@@ -3,7 +3,6 @@ import { GestureController, ModalController, LoadingController } from '@ionic/an
 
 import { Map, tileLayer, Marker, icon } from 'leaflet';
 import * as L from 'leaflet';
-import 'leaflet.markercluster';
 
 import { MapService } from 'src/app/service/map.service';
 
@@ -292,16 +291,6 @@ export class MapPage implements OnInit {
         }
       }
     });
-
-    // initalize marker cluster group
-    this.markerGroup = (L as any).markerClusterGroup({
-      spiderfyOnMaxZoom: false,
-      showCoverageOnHover: false,
-      zoomToBoundsOnClick: false,
-      singleMarkerMode: true,
-      maxClusterRadius: 40
-    });
-    this.map.addLayer(this.markerGroup);
 
     // invalidate map size after 1 second of initialization for rendering purposes
     setTimeout(() => {
