@@ -43,17 +43,6 @@ export class FilterPage implements OnInit {
    * Function to close the filter modal and pass data to map page
    */
   async closeModal() {
-    // fix weird error where time zone offset is added for each new filter application
-    const startDate = new Date(this.filterValues.startDate);
-    const endDate = new Date(this.filterValues.endDate);
-    startDate.setHours(0);
-    startDate.setMinutes(0);
-    startDate.setSeconds(0);
-    if (endDate.getUTCHours() !== 23 || endDate.getUTCMinutes() !== 59 || endDate.getUTCMinutes() !== 59) {
-      endDate.setMinutes(endDate.getTimezoneOffset());
-      this.filterValues.endDate = endDate.toISOString();
-    }
-
     // format start and end date to ISO formatted timestamp
     if (this.filterValues.startDate[this.filterValues.startDate.length - 1] !== 'Z') {
       this.filterValues.startDate = this.filterValues.startDate.substring(0, this.filterValues.startDate.length - 6);
