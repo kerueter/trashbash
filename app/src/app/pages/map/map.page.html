@@ -14,12 +14,11 @@
       </svg>
       <ion-card-header *ngIf="selectedPoi">
         <ion-card-subtitle>TPOI</ion-card-subtitle>
-        <ion-card-title>Illegale {{ selectedPoi.trashTypeString || ''}} Ablagerung</ion-card-title>
+        <ion-card-title>Trash point of Interest</ion-card-title>
       </ion-card-header>
     
       <ion-card-content *ngIf="selectedPoi">
         <p>Username: {{ selectedPoi.username || ''}}</p>
-        <p>Aufgenommen am: {{selectedPoi.date || ''}}</p>
         <p>Latitude: {{ selectedPoi.latitude || ''}}</p>
         <p>Longitude: {{ selectedPoi.longitude || ''}}</p>
       </ion-card-content>

@@ -87,21 +87,6 @@ export class MapPage implements OnInit {
       const marker = new Marker([report.latitude, report.longitude]);
       marker.addTo(this.map).on('click', e => {
         this.selectedPoi = report;
-        // convert datetimeString to date object
-        this.selectedPoi.date = new Date(this.selectedPoi.time);
-        // create string with the trash type
-        if (this.selectedPoi.gruenabfall) {
-          this.selectedPoi.trashTypeString = 'Grünabfall';
-        }
-        if (this.selectedPoi.hausmuell) {
-          this.selectedPoi.trashTypeString = 'Hausmüll';
-        }
-        if (this.selectedPoi.sondermuell) {
-          this.selectedPoi.trashTypeString = 'Sondermüll';
-        }
-        if (this.selectedPoi.sperrmuell) {
-          this.selectedPoi.trashTypeString = 'Sperrmüll';
-        }
         this.renderer.setStyle(this.mapMenu.nativeElement, 'height', '300px');
       });
     });
