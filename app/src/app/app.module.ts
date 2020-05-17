@@ -4,26 +4,30 @@ import { RouteReuseStrategy } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
+import { IonicStorageModule } from '@ionic/storage';
 import { SplashScreen } from '@ionic-native/splash-screen/ngx';
 import { StatusBar } from '@ionic-native/status-bar/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera } from '@ionic-native/camera/ngx';
 import { File } from '@ionic-native/file/ngx';
+import { FileTransfer } from '@ionic-native/file-transfer/ngx';
 import { WebView } from '@ionic-native/ionic-webview/ngx';
 import { HTTP } from '@ionic-native/http/ngx';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { TrashAddPage } from './pages/trash/add/add.page';
+import { TrashAddPage } from './pages/modals/trash/add/add.page';
 import { FormsModule } from '@angular/forms';
+import { FilterPage } from './pages/modals/filter/filter.page';
 
 @NgModule({
-  declarations: [AppComponent, TrashAddPage],
-  entryComponents: [TrashAddPage],
+  declarations: [AppComponent, TrashAddPage, FilterPage],
+  entryComponents: [TrashAddPage, FilterPage],
   imports: [
     BrowserModule,
     FormsModule,
     IonicModule.forRoot(),
+    IonicStorageModule.forRoot(),
     AppRoutingModule,
     HttpClientModule
   ],
@@ -33,6 +37,7 @@ import { FormsModule } from '@angular/forms';
     Geolocation,
     Camera,
     File,
+    FileTransfer,
     WebView,
     HTTP,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }

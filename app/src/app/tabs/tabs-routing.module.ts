@@ -18,16 +18,6 @@ const routes: Routes = [
         ]
       },
       {
-        path: 'settings',
-        children: [
-          {
-            path: '',
-            loadChildren: () =>
-              import('../pages/settings/settings.module').then(m => m.SettingsPageModule)
-          }
-        ]
-      },
-      {
         path: '',
         redirectTo: '/tabs/map',
         pathMatch: 'full'

@@ -1,0 +1,25 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Müll melden</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeModal()">Close</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-item class="modal-component">
+    <ion-label position="stacked">Name</ion-label>
+    <ion-input [(ngModel)]="username"></ion-input>
+  </ion-item>
+  <ion-list class="modal-component">
+    <ion-item *ngFor="let entry of trashes">
+      <ion-label>{{entry.val}}</ion-label>
+      <ion-checkbox slot="end" [(ngModel)]="entry.isChecked" [color]="entry.color || 'primary'"></ion-checkbox>
+    </ion-item>
+  </ion-list>
+  <ion-button expand="block" style="margin: 0 20px 100px 20px;" (click)="requestPhoto()">
+    <ion-icon name="trash" class="btn-icon"></ion-icon>
+    Müll melden
+  </ion-button>
+</ion-content>

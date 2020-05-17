@@ -1,0 +1,49 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Filter</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeModal()">Close</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list class="modal-component">
+    <ion-list-header>
+      Username
+    </ion-list-header>
+    <ion-item>
+      <ion-input clearInput [(ngModel)]="filterValues.username"></ion-input>
+    </ion-item>
+  </ion-list>
+  <ion-list class="modal-component">
+    <ion-list-header>
+      Zeitraum
+    </ion-list-header>
+    <ion-item>
+      <ion-label>Start</ion-label>
+      <ion-datetime [(ngModel)]="filterValues.startDate" placeholder="Select Start Date"></ion-datetime>
+    </ion-item>
+    <ion-item>
+      <ion-label>Ende</ion-label>
+      <ion-datetime [(ngModel)]="filterValues.endDate" placeholder="Select End Date"></ion-datetime>
+    </ion-item>
+  </ion-list>
+  <ion-list class="modal-component">
+    <ion-list-header>
+      Müllarten
+    </ion-list-header>
+    <ion-item *ngFor="let entry of filterValues.trash">
+      <ion-label>{{entry.val}}</ion-label>
+      <ion-checkbox slot="end" [(ngModel)]="entry.isChecked" [color]="entry.color || 'primary'"></ion-checkbox>
+    </ion-item>
+  </ion-list>
+  <ion-list class="modal-component" style="margin-bottom: 150px;">
+    <ion-list-header>
+      Radius
+    </ion-list-header>
+    <ion-item>
+      <ion-range min="0" max="500" step="10" snaps="true" ticks="false" pin="true" style="--bar-background-active: #28ba62" [(ngModel)]="filterValues.radius"></ion-range>
+    </ion-item>
+  </ion-list>
+</ion-content>

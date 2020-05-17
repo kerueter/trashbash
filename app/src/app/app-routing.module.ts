@@ -8,7 +8,11 @@ const routes: Routes = [
   },
   {
     path: 'add',
-    loadChildren: () => import('./pages/trash/add/add.module').then( m => m.AddPageModule)
+    loadChildren: () => import('./pages/modals/trash/add/add.module').then( m => m.AddPageModule)
+  },
+  {
+    path: 'filter',
+    loadChildren: () => import('./pages/modals/filter/filter.module').then( m => m.FilterPageModule)
   }
 ];
 @NgModule({

@@ -1,9 +1,16 @@
 <ion-content [fullscreen]="true">
-  <div class="map" id="map-leaflet" leaflet></div>
+  <div class="map" id="map-leaflet" [class.map-background]="isMapInBackground" leaflet></div>
+  
+  <!-- FAB for showing up filter modal -->
+  <ion-button size="small" class="btn-filter" color="light" (click)="openFilterModal()">
+    <ion-icon name="options"></ion-icon>
+    <p style="margin-left: 3px;">FILTER</p>
+  </ion-button>
 
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed" style="z-index: 1001; margin-bottom: 100px;">
-    <ion-fab-button size="small" (click)="openTrashAddModal()">
-      <ion-icon name="add"></ion-icon>
+  <!-- FAB for showing up modal to report trash -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="fab-trash-add">
+    <ion-fab-button size="small" (click)="openTrashAddModal()" style="--background: #28ba62">
+      <ion-icon name="add"></ion-icon> 
     </ion-fab-button>
   </ion-fab>
 
@@ -13,14 +20,32 @@
         <rect width="400" height="100" style="fill:rgb(128,128,128);" />
       </svg>
       <ion-card-header *ngIf="selectedPoi">
-        <ion-card-subtitle>TPOI</ion-card-subtitle>
-        <ion-card-title>Trash point of Interest</ion-card-title>
+        <ion-card-subtitle>GEMELDET VON {{ selectedPoi.username || ''}}<br>AM {{ selectedPoi.time ? formatDateTime(selectedPoi.time) : ''}}</ion-card-subtitle>
+        <ion-card-title>Trash Report #{{ selectedPoi.id }}</ion-card-title>
       </ion-card-header>
     
       <ion-card-content *ngIf="selectedPoi">
-        <p>Username: {{ selectedPoi.username || ''}}</p>
         <p>Latitude: {{ selectedPoi.latitude || ''}}</p>
         <p>Longitude: {{ selectedPoi.longitude || ''}}</p>
+        <br>
+        <ion-chip color="primary" *ngIf="selectedPoi.hausmuell">
+          <ion-icon name="trash"></ion-icon>
+          <ion-label>Hausmüll</ion-label>
+        </ion-chip>
+        <ion-chip color="success" *ngIf="selectedPoi.gruenabfall">
+          <ion-icon name="trash"></ion-icon>
+          <ion-label>Grünabfall</ion-label>
+        </ion-chip>
+        <ion-chip color="warning" *ngIf="selectedPoi.sperrmuell">
+          <ion-icon name="trash"></ion-icon>
+          <ion-label>Sperrmüll</ion-label>
+        </ion-chip>
+        <ion-chip color="danger" *ngIf="selectedPoi.sondermuell">
+          <ion-icon name="trash"></ion-icon>
+          <ion-label>Sondermüll</ion-label>
+        </ion-chip>
+        <img class="map-menu-img" [src]="selectedPoi.photo" *ngIf="selectedPoi && selectedPoi.photo"/>
+        <p style="margin-top: 10px;" *ngIf="!selectedPoi || !selectedPoi.photo">Kein Bild vorhanden</p>
       </ion-card-content>
     </ion-card>
   </div>
