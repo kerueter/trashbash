@@ -2,13 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const geojson = require('geojson');
-const expressWs = require('express-ws')(app);
 const fileUpload = require('express-fileupload');
 const crypto = require('crypto');
 const { Client } = require('pg');
 
 const ENDPOINT_URL = 'http://igf-srv-lehre.igf.uni-osnabrueck.de:1338';
 
+// initialize and connect Postgres client
 const client = new Client({
   user: 'marcel',
   host: '127.0.0.1',
@@ -18,6 +18,7 @@ const client = new Client({
 });
 client.connect();
 
+// define express middlewares to use
 app.use(cors());
 app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({limit: "10mb", extended: true, parameterLimit: 10000}));
@@ -27,16 +28,16 @@ app.use(fileUpload({
 	tempFileDir : '/tmp/'
 }));
 
+// start server on defined port
 app.listen(1338, function () {
   console.log('Example app listening on port 1338!');
 });
 
-app.ws('/trash', (ws, req) => {
-});
-var regWs = expressWs.getWss('/trash');
-
+// set cors headers
 app.options('*', cors());
 
+// GET /trash
+// Used to get trash reports based on user location and radius
 app.get('/trash', cors(), (req, res) => {
   const userLocationLat = req.query.userLocationLat;
   const userLocationLng = req.query.userLocationLng;
@@ -48,6 +49,8 @@ app.get('/trash', cors(), (req, res) => {
     return;
   }
 
+  // set date interval to query
+  // set to current date back to 14 days, if no date parameters were set
   let startDate;
   let endDate;
   const dateCurrent = new Date();
@@ -65,12 +68,13 @@ app.get('/trash', cors(), (req, res) => {
     endDate = new Date(req.query.endDate);
   }
 
-
+  // build DB query
   const queryMessage = 'SELECT * FROM trash WHERE time BETWEEN $1 AND $2 ORDER BY id ASC';
   const queryParams = [startDate, endDate];
 
   console.log(`Get trash between ${startDate.toISOString()} and ${endDate.toISOString()}`);
 
+  // start DB query
   client.query(queryMessage, queryParams, (err, dbRes) => {
     if (err) {
       res.status(500).send({ message: `Error: ${err.message}` });
@@ -90,30 +94,40 @@ app.get('/trash', cors(), (req, res) => {
         validRows.push(dbRow);
       }
     });
+
+    // return "valid" trash reports in GeoJSON format
     const validRowsGeoJson = geojson.parse(validRows, { Point: ['latitude', 'longitude'] });
     res.status(200).send(validRowsGeoJson);
   });
 });
 
+// POST /trash
+// Store trash report in database
 app.post('/trash', cors(), (req, res) => {
   const trashReport = req.body;
   const trashImg = trashReport.photo && trashReport.photo.length > 0 ? `${ENDPOINT_URL}/${trashReport.photo}` : '';
+  
+  // build DB query
   const queryText = `INSERT INTO trash (time,username,latitude,longitude,hausmuell,gruenabfall,sperrmuell,sondermuell,photo) VALUES (to_timestamp($1), $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`;
   const queryVals = [trashReport.time, trashReport.username, trashReport.latitude, trashReport.longitude, trashReport.hausMuell, trashReport.gruenAbfall, trashReport.sperrMuell, trashReport.sonderMuell, trashImg]
+  
+  // start DB query
   client.query(queryText, queryVals, (err, dbRes) => {
     if(err) {
       console.log(err);
       res.status(500).send({ message: `Error: ${err.message}` });
       return;
     }
+
+    // return inserted trash report in GeoJSON format
     const rowGeoJson = geojson.parse(dbRes.rows[0], { Point: ['latitude', 'longitude'] })
-    regWs.clients.forEach(client => {
-      client.send(JSON.stringify(rowGeoJson));
-    });
     res.status(200).send(rowGeoJson);
   });
 });
 
+// POST /trash/images/upload
+// Retrieve "binary" image of trash report and store it as ".jpg" file in "/media/uploads" folder
+// Return the file path of the generated image
 app.post('/trash/images/upload', (req, res) => {
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
