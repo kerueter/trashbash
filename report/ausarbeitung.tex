@@ -226,7 +226,10 @@
 	\end{abstract}
 
 	\section{Einleitung}
-	...
+	Illegal entsorgter Müll, beispielsweise in Grünanlagen, auf Straßen oder auf Spielplätzen, stellt in vielen Gemeinden - auch in Osnabrück - ein großes Problem dar. Dies geht aus einem Bericht des \textit{OS-Radio} aus dem Jahr 2019\footnote{https://www.osradio.de/2019/04/25/viele-illegale-muellkippen-in-osnabrueck/} hervor.
+	Um diesem entgegenzusteuern, sollen dem Bericht zufolge \enquote{Müll-Sherrifs eingesetzt werden, die Stellen überprüfen sollen, die oft zur illegalen Entsorgung genutzt werden}.\\
+	Zur Digitalisierung dieses Vorgehens sollte ein mobiles Meldesystem erstellt werden, welches jedem Bürger ermöglicht, illegal entsorgten Müll zu dokumentieren und zu melden.\\
+	Dieses Meldesystem wurde im Rahmen der Veranstaltung \enquote{Standortbasierte Dienste} als Abschlussaufgabe entwickelt.
 
 	\section{Grundlagen}
 	In diesem Abschnitt werden zunächst die grundlegenden Technologien aufgeführt, die innerhalb des entwickelten Systems zum Einsatz kommen.
@@ -401,13 +404,19 @@
 	Zudem ist hierdurch einfach möglich, komponentenübergreifend, also sowohl in der Map-Komponente, als auch in den Modals auf die Datenstruktur zuzugreifen.
 	
 	\subsection{Backend / Server}
-	\begin{itemize}
-		\item In diesem Abschnitt wird erklärt wie der Server als Schnittstelle zwischen App und Datenbank fungiert. Die zwei Hauptfunktionen des Servers sind unter dem Endpoint \textit{/trash} mit HTTP-Get und POST erreichbar.
-		\item Mit der GET-Methode werden die Anfragen der App nach Müllablagerungen bedient. Dort wird zuerst überprüft, ob die drei von der App zu sendeten Werte Latitude, Longitude und Radius wirklich gesendet wurden. Ist dies nicht der Fall wird der HTTP-Fehler 				400 (Bad Request) zurückgegeben. Danach wird geschaut, ob ein Start- und Enddatum vorhanden ist. Wenn keine Daten in der Filterfunktion der App angegeben wurden, werden die letzten 14 Tage als Anzeigezeitraum gewählt.
-		\item Die zur Datenbankabfrage notwendigen Daten sind dann bereit, sodass folgendes Statement an die Datenbank geschickt werden kann:\textit{ “SELECT * FROM trash WHERE time BETWEEN startDate AND endDate ORDER BY id ASC”}. So bekommt man alle 				Müllablagerungsmeldungen zwischen Start- und Enddatum nach Meldezeitpunkt sortiert, da die \textit {id} als Primärschlüssel bei jeder Meldung hochgezählt wird.
-			Die so erhaltenen Zeilen aus der Datenbank müssen noch auf den im Filter gewählten Radius ausgedünnt werden. Für die Berechnung wurde die Funktion \textit{getTrashDistance(center, marker)} geschrieben, um die Distanz auf der Erdkugel zu berechnen. 				Dabei enthält \textit{center} die Koordinaten des Nutzers, und \textit{marker} die der Müllmeldung. Die Koordinaten, der in dem Radius liegenden Meldungen, werden als Punkte im GeoJSON Format zurückgegeben. So können die Marker in der App an den 				passenden Punkten angezeigt werden.
-		\item Die dritte Funktion des Servers ist es die vom Nutzer hochzuladenden Bilder anzunehmen. Zuerst wird überprüft, ob im empfangenen Body sich ein \textit{files}-Objekt befindet. Ist dies nicht der Fall wird der Statuscode 400 für Bad Request 							zurückgegeben. Das Foto wird mit dem eigenen md5-Hashwert als Dateinamen abgespeichert und an die App wird zusammen, mit Statuscode 200 der Dateipfad auf dem Server zurückgeschickt. Ansonsten kommt HTTP-Code 500 Internal Server Error, falls die 				Datei nicht abgespeichert werden kann.
-	\end{itemize}
+	In diesem Abschnitt wird erklärt, wie der \textit{\enquote{Express.js}}-Server als Schnittstelle zwischen App und Datenbank fungiert. Die zwei Hauptfunktionen des Servers sind unter dem Endpunkt \textit{/trash} mit HTTP-GET und -POST erreichbar.\\
+	\textbf{}\\
+	Mit der GET-Methode werden die Anfragen der App nach Müllablagerungen bedient. Dort wird zuerst überprüft, ob die drei von der App zu sendenden Werte \textit{Latitude}, \textit{Longitude} und \textit{Radius} gesendet wurden. Ist dies nicht der Fall wird der HTTP-Fehler 400 (Bad Request) zurückgegeben.
+	Es wurde im Designprozess des Systems entschieden, dass diese Werte gesetzt werden müssen, um die Datenmenge zu reduzieren, die zurückgegeben wird (\enquote{Warum sollte ein Müll-Sheriff sich dafür interessieren, ob in China Müll gemeldet wurde, während er sich in Osnabrück aufhält?}).
+	Danach wird geschaut, ob ein Start- und Enddatum vorhanden ist. Wenn keine Daten in der Filterfunktion der App angegeben wurden, werden die letzten 14 Tage als Anzeigezeitraum gewählt. Auf das Filtern über HTTP-GET der einzelnen Mülltypen wurde aufgrund der Simplifizierung verzichtet und somit wird dies lediglich clientseitig abgewickelt.\\
+	Die zur Datenbankabfrage notwendigen Daten sind dann bereit, sodass folgendes Statement an die Datenbank geschickt werden kann:\\
+	\textbf{}\\
+	\texttt{SELECT * FROM trash WHERE time BETWEEN startDate AND endDate ORDER BY id ASC}.\\
+	\textbf{}\\
+	So bekommt man alle Müllablagerungsmeldungen zwischen Start- und Enddatum nach Meldezeitpunkt sortiert, da die \textit{id} als Primärschlüssel bei jeder Meldung hochgezählt wird.
+	Die so erhaltenen Zeilen aus der Datenbank müssen noch auf den im Filter gewählten Radius ausgedünnt werden. Für die Berechnung wurde die Funktion \textit{getTrashDistance(center, marker)} geschrieben, um die Distanz auf der Erdkugel zu berechnen. Dabei enthält \textit{center} die Koordinaten des Nutzers und \textit{marker} die der Müllmeldung. Die Koordinaten, der in dem Radius liegenden Meldungen, werden als Punkte im GeoJSON-Format zurückgegeben. So können die Marker in der App an den passenden Punkten angezeigt werden.\\
+	Die dritte Funktion des Servers ist es, die vom Nutzer hochzuladenden Bilder anzunehmen. Zuerst wird überprüft, ob sich im empfangenen Body ein \textit{files}-Objekt befindet. Ist dies nicht der Fall, wird der Statuscode \textit{400} für Bad Request zurückgegeben. Das Foto wird mit einem zufällig generierten \textit{md5}-Hashwert als Dateinamen abgespeichert und an die App wird zusammen mit Statuscode \textit{200} der Dateipfad auf dem Server zurückgeschickt. Ansonsten kommt HTTP-Code \textit{500} (Internal Server Error), falls die Datei nicht abgespeichert werden konnte.\\
+	Da die Datenbank-Tabelle von allen Teilnehmern der Veranstaltung genutzt wird, wird das Bild zu einem Müllablagerungsbericht mit dem entsprechenden HTTP-Endpunkt in der Datenbank abgespeichert, unter dem das Bild aufgerufen werden kann (Bsp.: \textit{http://igf-srv-lehre.igf.uni-osnabrueck.de:1338/media/uploads/81bee383d3fa9c4fa800f4f0ba9a1953.jpg}). Somit ist es allen Nutzern der Datenbank möglich, das Bild aufzurufen, ohne weitere Konfigurationen oder \enquote{Workarounds} zu erstellen.
 
 	\section{Zusammenfassung und Ausblick}
 	Im Rahmen der Veranstaltung \enquote{Standortbasierte Dienste} im Wintersemester 2019/2020 wurde als Abschlussaufgabe ein prototypisches Müllmeldesystem zur Meldung illegaler Müllablagerungen entwickelt.
