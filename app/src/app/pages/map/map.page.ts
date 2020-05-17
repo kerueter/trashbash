@@ -35,6 +35,15 @@ export class MapPage implements OnInit {
   private controlUI;
   private isMapServiceInitialized;
 
+  /**
+   * Constructor for the map page component
+   *
+   * @param gestureCtrl
+   * @param renderer
+   * @param modalCtrl
+   * @param loadingCtrl
+   * @param mapService
+   */
   constructor(
     private gestureCtrl: GestureController,
     private renderer: Renderer2,
@@ -49,7 +58,11 @@ export class MapPage implements OnInit {
     this.isMapServiceInitialized = false;
   }
 
+  /**
+   * Ionic/Angular initialize lifecycle method
+   */
   async ngOnInit() {
+    // present loading spinner while initalizing map
     const loading = await this.loadingCtrl.create({
       message: 'App wird initialisiert...'
     });
@@ -69,6 +82,7 @@ export class MapPage implements OnInit {
     });
     gesture.enable();
 
+    // dismiss loading spinner after initialization
     await loading.dismiss();
   }
 
@@ -85,7 +99,11 @@ export class MapPage implements OnInit {
       swipeToClose: false,
       showBackdrop: true
     });
-    this.isMapInBackground = true;
+
+    this.isMapInBackground = true; // for scale effect of modal
+
+    // apply filters after filter modal was closed
+    // only apply filters, if filters changed
     modal.onDidDismiss().then(result => {
       const modalFilter = new Filter(
         result.data.filter.radius,
@@ -117,7 +135,9 @@ export class MapPage implements OnInit {
       cssClass: 'trash-modal',
       swipeToClose: false
     });
+
     this.isMapInBackground = true;
+
     modal.onDidDismiss().then(result => {
       this.isMapInBackground = false;
       if (result.data.report) {
@@ -196,6 +216,7 @@ export class MapPage implements OnInit {
   private onSlideMenuEnd($event) {
     this.mapMenuOffsetY = Number(this.mapMenu.nativeElement.style.bottom.substring(0, this.mapMenu.nativeElement.style.bottom.length - 2));
 
+    // close slider menu, if dragged down to (1/3) of height, otherwise "jump" back to original size
     if (Math.abs(this.mapMenuOffsetY) < (this.mapMenuHeight / 3)) {
       this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', '0px');
     } else {
@@ -211,7 +232,7 @@ export class MapPage implements OnInit {
    */
   private onSlideMenuMove($event) {
     const newOffsetY = this.mapMenuOffsetY - $event.deltaY;
-    const velocityY = $event.velocityY;
+
     if (newOffsetY <= 0) { // only shift positive Y offset
       this.renderer.setStyle(this.mapMenu.nativeElement, 'bottom', newOffsetY + 'px');
     }
@@ -250,16 +271,19 @@ export class MapPage implements OnInit {
       layers: [layerOsm, layerVoyager],
     }).setView([0, 0], 2);
     L.control.layers(layerMap).addTo(this.map);
+
+    // extend leaflet controls with "location follow" toggler
     (L.Control as any).Location = L.Control.extend(
     {
         options: { position: 'topleft' },
         onAdd: () => {
           const controlDiv = L.DomUtil.create('div', 'leaflet-draw-toolbar leaflet-bar');
-          this.controlUI = L.DomUtil.create('a', 'leaflet-control-location-off', controlDiv);
+          this.controlUI = L.DomUtil.create('a', 'leaflet-control-location-on', controlDiv);
           L.DomEvent
             .addListener(controlDiv, 'click', L.DomEvent.stopPropagation)
             .addListener(controlDiv, 'click', L.DomEvent.preventDefault)
             .addListener(controlDiv, 'click', () => {
+              // toggle follow status of user
               this.currentLocation.follow = !this.currentLocation.follow;
 
               // toggle location icon
@@ -307,9 +331,10 @@ export class MapPage implements OnInit {
       ]);
 
       if (this.currentLocation.follow) {
-        this.map.panTo(this.currentLocation.marker.getLatLng());
+        this.map.flyTo(this.currentLocation.marker.getLatLng());
       }
 
+      // only initialize map service, if the first location of subscriber was received
       if (!this.isMapServiceInitialized) {
         try {
           await this.mapService.initializeTrashCollection(this.currentLocation.marker.getLatLng());
@@ -332,14 +357,17 @@ export class MapPage implements OnInit {
 
     // retrieve trash reports again from backend
     if (filterChanged) {
+      // first remove existing markers from map, if enabled
       this.markerReports.forEach(markerReport => {
         if (markerReport.enabled) {
           markerReport.marker.remove();
         }
       });
 
+      // append trash collection in map service based on user location and current filters
       await this.mapService.append(this.currentLocation.marker.getLatLng());
 
+      // only add marker, if not already added to marker reports (no duplicates)
       this.mapService.getTrashCollection().forEach(report => {
         if (this.markerReports.map(mr => mr.report.id).indexOf(report.id) < 0) {
           this.addMarker(report);
@@ -365,6 +393,7 @@ export class MapPage implements OnInit {
         { latitude: currentLatLng.lat, longitude: currentLatLng.lng}, { latitude: markerReport.report.latitude, longitude: markerReport.report.longitude}
       ) <= this.mapService.getFilters().getRadius());
 
+      // set marker report to enabled, if it "passes" through all active filters
       markerReport.enabled = filterTrash && filterUsername && filterDate && filterRadius;
       if (markerReport.enabled) {
         this.addMarkerToMap(markerReport);
@@ -372,6 +401,11 @@ export class MapPage implements OnInit {
     });
   }
 
+  /**
+   * Add a marker report to the leaflet map
+   *
+   * @param markerReport Marker report object
+   */
   private addMarkerToMap(markerReport: any) {
     markerReport.marker.addTo(this.map).on('click', e => {
       this.selectedPoi = markerReport.report;

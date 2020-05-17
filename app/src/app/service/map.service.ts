@@ -12,10 +12,21 @@ import { Filter } from '../models/Filters';
   providedIn: 'root'
 })
 export class MapService {
+  /// local cache of trashes
   private trashCollection: Array<Trash>;
+
+  /// active filters
   private filters: Filter;
+
+  /// observer instance of the user location
   private userLocationObserver: any;
 
+  /**
+   * Constructor of the map service
+   *
+   * @param geolocation
+   * @param apiService
+   */
   constructor(
     private geolocation: Geolocation,
     private apiService: ApiService
@@ -54,7 +65,7 @@ export class MapService {
 
   /**
    * Get all trash reports from API and add to trash collection
-   * 
+   *
    * @param currentLocation Current user location
    */
   async initializeTrashCollection(currentLocation: LatLng): Promise<void> {

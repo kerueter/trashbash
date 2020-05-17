@@ -20,6 +20,17 @@ export class TrashAddPage implements OnInit {
   username: string;
   trashes: Array<{ val: string, isChecked: boolean, color: string}>;
 
+  /**
+   * Constructor of the trash add modal page
+   *
+   * @param modalCtrl
+   * @param loadingCtrl
+   * @param actionSheetController
+   * @param toastCtrl
+   * @param camera
+   * @param mapService
+   * @param apiService
+   */
   constructor(
     private modalCtrl: ModalController,
     private loadingCtrl: LoadingController,
@@ -40,6 +51,10 @@ export class TrashAddPage implements OnInit {
 
   ngOnInit() {}
 
+  /**
+   * Function to request photo with action sheet controller
+   * If yes, photo will be captured, if no, report will be sent without photo, else sending is aborted
+   */
   async requestPhoto() {
     const actionSheet = await this.actionSheetController.create({
       header: 'Möchtest du noch ein Foto erstellen?',
@@ -70,6 +85,10 @@ export class TrashAddPage implements OnInit {
     await actionSheet.present();
   }
 
+  /**
+   * Select the source of the image
+   * Possible to capture a photo or choose a photo from photo library of the phone
+   */
   async selectImage() {
     const actionSheet = await this.actionSheetController.create({
       header: 'Quelle wählen',
@@ -100,12 +119,22 @@ export class TrashAddPage implements OnInit {
     await actionSheet.present();
   }
 
+  /**
+   * Close the trash add modal and pass report got as response from backend
+   *
+   * @param resp Report as backend response
+   */
   closeModal(resp?: Trash) {
     this.modalCtrl.dismiss({
       report: resp
     });
   }
 
+  /**
+   * Get image from chosed source
+   *
+   * @param sourceType Source of the image to be sent
+   */
   private async getImage(sourceType: number) {
     const options: CameraOptions = {
       quality: 100,
@@ -122,6 +151,11 @@ export class TrashAddPage implements OnInit {
     }
   }
 
+  /**
+   * Send report to the backend
+   *
+   * @param imageData Optional image data, if image was captured
+   */
   async sendReport(imageData?: string) {
     const loading = await this.loadingCtrl.create({
       message: 'Report wird übermittelt...'

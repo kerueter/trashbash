@@ -12,6 +12,12 @@ import { Filter } from '../models/Filters';
 export class ApiService {
   endpointUrl: string;
 
+  /**
+   * Constructor of the API service
+   *
+   * @param httpClient
+   * @param transfer
+   */
   constructor(
     private httpClient: HttpClient,
     private transfer: FileTransfer
@@ -19,6 +25,13 @@ export class ApiService {
     this.endpointUrl = 'http://igf-srv-lehre.igf.uni-osnabrueck.de:1338';
   }
 
+  /**
+   * GET list of trash reports, parse and return parsed list
+   *
+   * @param userLocationLat Latitude of the current user location
+   * @param userLocationLng Longitude of the current user location
+   * @param filter Filters to apply
+   */
   public async listTrash(userLocationLat: number, userLocationLng: number, filter: Filter): Promise<Array<Trash>> {
     console.log(`GET Trash with radius: ${filter.getRadius()}, start date: ${filter.getStartDate()}, end date: ${filter.getEndDate()}`);
 
@@ -57,6 +70,11 @@ export class ApiService {
     }
   }
 
+  /**
+   * POST trash report to backend
+   *
+   * @param report Report to send to backend
+   */
   public async postTrash(report: any): Promise<Trash> {
     try {
       const feature = await this.httpClient.post<Feature>(`${this.endpointUrl}/trash`, report, {
@@ -81,6 +99,11 @@ export class ApiService {
     }
   }
 
+  /**
+   * Separate POST endpoint to post "binary" trash image
+   *
+   * @param filePath Local file path of the image
+   */
   public async postTrashImage(filePath: string): Promise<any> {
     const fileTransfer: FileTransferObject = this.transfer.create();
     try {
